@@ -1,7 +1,7 @@
 defmodule ObserverWeb.MixProject do
   use Mix.Project
 
-  @source_url "https://github.com/thiagoesteves/observer_web"
+  @source_url "https://github.com/deployex/observer_web"
   @version "0.2.8"
 
   def project do
