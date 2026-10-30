@@ -7,6 +7,7 @@
 
 ### Bug fixes
  * [[`PR-71`](https://github.com/deployex/observer_web/pull/71)] Bump phoenix and phoenix_live_view for security advisories and fix a flaky version server test
+ * [[`PR-74`](https://github.com/deployex/observer_web/pull/74)] Bump Tailwind to 4.3.3 so asset builds work on current macOS
 
 ### Enhancements
  * [[`PR-70`](https://github.com/deployex/observer_web/pull/70)] Surface Process.set_label/1 labels on the Apps page
