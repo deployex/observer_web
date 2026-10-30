@@ -20,7 +20,7 @@ if config_env() == :dev do
     ]
 
   config :tailwind,
-    version: "4.1.0",
+    version: "4.3.3",
     default: [
       args: ~w(
         --minify
