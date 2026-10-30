@@ -440,5 +440,5 @@ via OTP distribution!
 [ac]: Observer.Web.Resolver.html#c:resolve_access/1
 [ba]: https://hexdocs.pm/basic_auth/readme.html
 [oi]: installation.html
-[dye]: https://github.com/thiagoesteves/deployex
+[dye]: https://github.com/deployex/deployex
 [mtc]: https://hexdocs.pm/telemetry_metrics/Telemetry.Metrics.html

@@ -8,7 +8,7 @@ statuses and Beam VM statistics.
 Powered by [Phoenix LiveView][liv], it is distributed, lightweight, fully real-time and __safe to use in production__. This
 library is part of the [DeployEx][dye] project.
 
-[dye]: https://github.com/thiagoesteves/deployex
+[dye]: https://github.com/deployex/deployex
 [edb]: https://www.erlang.org/doc/apps/runtime_tools/dbg.html
 [liv]: https://github.com/phoenixframework/phoenix_live_view
 
