@@ -13,6 +13,7 @@
 ### Enhancements
  * [[`PR-70`](https://github.com/deployex/observer_web/pull/70)] Surface Process.set_label/1 labels on the Apps page
  * [[`PR-72`](https://github.com/deployex/observer_web/pull/72)] Move the repository to the deployex GitHub org and update package links
+ * [[`PR-76`](https://github.com/deployex/observer_web/pull/76)] Drop unused npm Phoenix deps and the empty root lockfile
 
 ## 0.2.8 🚀 (2026-07-21)
 
