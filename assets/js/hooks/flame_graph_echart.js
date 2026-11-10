@@ -1,4 +1,4 @@
-import * as echarts from "echarts"
+import { initChart, onThemeChange } from "../lib/echarts_theme"
 
 // Deterministic per-name color (same function always gets the same color across the graph),
 // without needing a fixed lookup table for arbitrary Elixir module/function names.
@@ -132,17 +132,29 @@ function buildOption(root) {
 const FlameGraphEChart = {
   mounted() {
     const selector = "#" + this.el.id
-    this.chart = echarts.init(this.el.querySelector(selector + "-chart"))
+    this.dom = this.el.querySelector(selector + "-chart")
+    this.chart = initChart(this.dom)
     this.rawData = this.el.querySelector(selector + "-data").textContent
     this.root = assignIds(JSON.parse(this.rawData), "0")
     this.chart.setOption(buildOption(this.root))
 
-    this.chart.on("click", (params) => {
+    this.onChartClick = (params) => {
       const target = params.data && pruneToPath(this.root, params.data.id)
       // Zooming merge-updates only the data/axes (never notMerge): the toolbox Restore button
       // reverts to the last notMerge option, so replacing the whole option here would make
       // Restore "restore" the zoomed state instead of zooming back out.
       if (target) this.chart.setOption(zoomOption(target))
+    }
+    this.chart.on("click", this.onChartClick)
+
+    // echarts binds its theme at init time, so following a theme change means
+    // disposing and re-initializing the chart (which drops the zoomed-in
+    // state, back to the full tree) and rebinding the click handler.
+    this.disposeThemeWatcher = onThemeChange(() => {
+      this.chart.dispose()
+      this.chart = initChart(this.dom)
+      this.chart.setOption(buildOption(this.root))
+      this.chart.on("click", this.onChartClick)
     })
   },
   updated() {
@@ -155,6 +167,7 @@ const FlameGraphEChart = {
     this.chart.setOption(buildOption(this.root), true)
   },
   destroyed() {
+    this.disposeThemeWatcher()
     if (this.chart) this.chart.dispose()
   }
 }
