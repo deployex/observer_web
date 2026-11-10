@@ -17,6 +17,7 @@ defmodule Observer.Web.Apps.Page do
   alias Observer.Web.Components.MultiSelect
   alias Observer.Web.Helpers
   alias Observer.Web.Page
+  alias Observer.Web.Resolver
   alias ObserverWeb.Apps
   alias ObserverWeb.Apps.Aggregator
   alias ObserverWeb.Monitor
@@ -154,6 +155,7 @@ defmodule Observer.Web.Apps.Page do
             node={@current_selected_id.node}
             metric={@current_selected_id.metric}
             metrics={Map.get(@streams, data_key)}
+            access={@access}
           />
         <% else %>
           <Port.content
@@ -163,6 +165,7 @@ defmodule Observer.Web.Apps.Page do
             node={@current_selected_id.node}
             metric={@current_selected_id.metric}
             metrics={Map.get(@streams, data_key)}
+            access={@access}
           />
         <% end %>
       </div>
@@ -258,8 +261,10 @@ defmodule Observer.Web.Apps.Page do
   def handle_parent_event(
         "request_port_action",
         %{"action" => "kill"},
-        %{assigns: %{current_selected_id: current_selected_id}} = socket
+        %{assigns: %{current_selected_id: current_selected_id, access: access}} = socket
       ) do
+    Resolver.enforce_access!(:close_port, access)
+
     {:noreply,
      assign(
        socket,
@@ -271,8 +276,10 @@ defmodule Observer.Web.Apps.Page do
   def handle_parent_event(
         "request_process_action",
         %{"action" => "kill"},
-        %{assigns: %{current_selected_id: current_selected_id}} = socket
+        %{assigns: %{current_selected_id: current_selected_id, access: access}} = socket
       ) do
+    Resolver.enforce_access!(:kill_process, access)
+
     {:noreply,
      assign(
        socket,
@@ -284,8 +291,10 @@ defmodule Observer.Web.Apps.Page do
   def handle_parent_event(
         "request_process_action",
         %{"action" => "garbage_collect"},
-        %{assigns: %{current_selected_id: current_selected_id}} = socket
+        %{assigns: %{current_selected_id: current_selected_id, access: access}} = socket
       ) do
+    Resolver.enforce_access!(:garbage_collect_process, access)
+
     pid_string = current_selected_id.id_string
     pid = Helpers.string_to_pid(pid_string)
 
@@ -301,17 +310,24 @@ defmodule Observer.Web.Apps.Page do
   def handle_parent_event(
         "request_process_action",
         %{"process-send-message" => message},
-        %{assigns: %{current_selected_id: current_selected_id}} = socket
+        %{assigns: %{current_selected_id: current_selected_id, access: access}} = socket
       ) do
+    Resolver.enforce_access!(:send_message, access)
+
     pid_string = current_selected_id.id_string
     pid = Helpers.string_to_pid(pid_string)
 
-    {term, _} = Code.eval_string(message)
-    send(pid, term)
+    case parse_term(message) do
+      {:ok, term} ->
+        send(pid, term)
 
-    {:noreply,
-     socket
-     |> put_flash(:info, "Message sent to process pid: #{pid_string} with success")}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Message sent to process pid: #{pid_string} with success")}
+
+      :error ->
+        {:noreply, put_flash(socket, :error, "Message must be a valid Elixir term")}
+    end
   end
 
   def handle_parent_event(
@@ -382,22 +398,23 @@ defmodule Observer.Web.Apps.Page do
         %{"process-send-message" => message},
         socket
       ) do
-    # NOTE: Validate that the message is valid Elixir syntax by attempting to parse and evaluate it
+    # Validate that the message is a literal Elixir term, without evaluating any function call.
     errors =
-      try do
-        case Code.eval_string(message) do
-          {_term, _} ->
-            []
-        end
-      rescue
-        _exception ->
-          [{:message, {"invalid elixir format", []}}]
+      case parse_term(message) do
+        {:ok, _term} -> []
+        :error -> [{:message, {"invalid elixir format", []}}]
       end
 
     {:noreply, assign(socket, process_msg_form: to_form(%{"message" => message}, errors: errors))}
   end
 
-  def handle_parent_event("port-close-confirmation", %{"id" => id_string}, socket) do
+  def handle_parent_event(
+        "port-close-confirmation",
+        %{"id" => id_string},
+        %{assigns: %{access: access}} = socket
+      ) do
+    Resolver.enforce_access!(:close_port, access)
+
     true = id_string |> Helpers.string_to_port() |> Elixir.Port.close()
 
     {:noreply,
@@ -407,7 +424,13 @@ defmodule Observer.Web.Apps.Page do
      |> assign(:current_selected_id, %Identifier{})}
   end
 
-  def handle_parent_event("process-kill-confirmation", %{"id" => id_string}, socket) do
+  def handle_parent_event(
+        "process-kill-confirmation",
+        %{"id" => id_string},
+        %{assigns: %{access: access}} = socket
+      ) do
+    Resolver.enforce_access!(:kill_process, access)
+
     true = id_string |> Helpers.string_to_pid() |> Elixir.Process.exit(:kill)
 
     {:noreply,
@@ -989,6 +1012,31 @@ defmodule Observer.Web.Apps.Page do
       id: Helpers.identifier_to_safe_id(id)
     }
   end
+
+  # Parses `string` as a literal Elixir term (number, atom, string, list, tuple, or map) without
+  # ever evaluating a function call, a variable, or a module reference - unlike `Code.eval_string/1`,
+  # typing something here can't run arbitrary code.
+  defp parse_term(string) do
+    with {:ok, quoted} <- Code.string_to_quoted(string),
+         true <- literal_term?(quoted) do
+      {term, _bindings} = Code.eval_quoted(quoted)
+      {:ok, term}
+    else
+      _not_literal -> :error
+    end
+  end
+
+  defp literal_term?(ast) when is_number(ast) or is_binary(ast) or is_atom(ast), do: true
+  defp literal_term?({:-, _meta, [number]}) when is_number(number), do: true
+  defp literal_term?({a, b}), do: literal_term?(a) and literal_term?(b)
+  defp literal_term?(list) when is_list(list), do: Enum.all?(list, &literal_term?/1)
+  defp literal_term?({:{}, _meta, elements}), do: Enum.all?(elements, &literal_term?/1)
+
+  defp literal_term?({:%{}, _meta, pairs}) do
+    Enum.all?(pairs, fn {key, value} -> literal_term?(key) and literal_term?(value) end)
+  end
+
+  defp literal_term?(_other), do: false
 
   defp aggregation_rows(%{observer_data: observer_data, apps_stats: apps_stats}) do
     observer_data

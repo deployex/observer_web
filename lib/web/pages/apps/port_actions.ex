@@ -6,10 +6,13 @@ defmodule Observer.Web.Apps.PortActions do
   use Observer.Web, :html
   use Phoenix.Component
 
+  alias Observer.Web.Resolver
+
   attr :id, :string, required: true
   attr :on_action, :any, required: true
   attr :memory_monitor, :boolean, required: true
   attr :node, :atom, required: true
+  attr :access, :any, required: true
 
   def content(assigns) do
     ~H"""
@@ -24,7 +27,8 @@ defmodule Observer.Web.Apps.PortActions do
             id="port-close-button"
             phx-click={@on_action}
             phx-value-action="kill"
-            class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip"
+            disabled={not Resolver.can?(:close_port, @access)}
+            class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
             title="Close the selected port"
           >
             <span>⛔</span>

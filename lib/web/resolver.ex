@@ -68,9 +68,6 @@ defmodule Observer.Web.Resolver do
     end
   end
   ```
-
-  ## References:
-   * https://github.com/oban-bg/oban_web/blob/main/lib/oban/web/resolver.ex
   """
 
   @type access :: :all | :read_only | {:forbidden, Path.t()}
@@ -101,9 +98,10 @@ defmodule Observer.Web.Resolver do
   @doc """
   Determine the appropriate access level for a user.
 
-  During normal operation users can modify running queues and interact with jobs through the
-  dashboard. In some situations actions such as pausing a queue may be undesired, or even
-  dangerous for operations.
+  During normal operation users can inspect the observed system freely, but some dashboard
+  actions mutate it directly: killing a process, closing a port, sending an arbitrary message to
+  a process, forcing garbage collection, or starting a tracing/profiling session. In some
+  situations those actions are undesired, or even dangerous for operations.
 
   Through this callback you can tailor precisely which actions the current user can do. The
   default access level is `:all`, which permits _all_ users to do any action.
@@ -113,11 +111,11 @@ defmodule Observer.Web.Resolver do
 
   The available fine grained access controls are:
 
-  * `:pause_queues`
-  * `:scale_queues`
-  * `:cancel_jobs`
-  * `:delete_jobs`
-  * `:retry_jobs`
+  * `:kill_process`
+  * `:close_port`
+  * `:send_message`
+  * `:garbage_collect_process`
+  * `:start_trace`
 
   Actions which aren't listed are considered disabled.
 
@@ -144,7 +142,7 @@ defmodule Observer.Web.Resolver do
 
       def resolve_access(user) do
         if user.admin? do
-          [cancel_jobs: true, delete_jobs: true, retry_jobs: true]
+          [kill_process: true, close_port: true, send_message: true, start_trace: true]
         else
           :read_only
         end
@@ -172,4 +170,52 @@ defmodule Observer.Web.Resolver do
 
   @doc false
   def resolve_access(_user), do: :all
+
+  @doc """
+  Check an action against a resolved access value.
+
+  Use this to decide whether to render a control at all, or to disable it. It never raises -
+  pair it with `enforce_access!/2` in the event handler so a client can't bypass a hidden or
+  disabled control by sending the underlying event directly.
+
+  ## Examples
+
+      iex> Observer.Web.Resolver.can?(:kill_process, :all)
+      true
+
+      iex> Observer.Web.Resolver.can?(:kill_process, :read_only)
+      false
+
+      iex> Observer.Web.Resolver.can?(:kill_process, kill_process: true)
+      true
+
+      iex> Observer.Web.Resolver.can?(:close_port, kill_process: true)
+      false
+  """
+  @spec can?(atom(), access()) :: boolean()
+  def can?(_action, :all), do: true
+  def can?(_action, :read_only), do: false
+  def can?(action, opts) when is_list(opts), do: Keyword.get(opts, action, false)
+
+  @doc """
+  Raise `Observer.Web.AccessError` unless `action` is permitted under `access`.
+
+  Call this at the top of every handler that performs a mutating or destructive action. Checking
+  `can?/2` to hide or disable a control in the UI is not enough on its own, since nothing stops a
+  client from sending the underlying event directly.
+
+  ## Examples
+
+      iex> Observer.Web.Resolver.enforce_access!(:kill_process, :all)
+      :ok
+
+      iex> Observer.Web.Resolver.enforce_access!(:kill_process, :read_only)
+      ** (Observer.Web.AccessError) the :kill_process action isn't allowed with the current access level
+  """
+  @spec enforce_access!(atom(), access()) :: :ok
+  def enforce_access!(action, access) do
+    unless can?(action, access), do: raise(Observer.Web.AccessError, action: action)
+
+    :ok
+  end
 end

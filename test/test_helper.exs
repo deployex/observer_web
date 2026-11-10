@@ -37,6 +37,13 @@ defmodule LimitedResolver do
   def resolve_access(_user), do: :all
 end
 
+defmodule ReadOnlyResolver do
+  @behaviour Observer.Web.Resolver
+
+  @impl Observer.Web.Resolver
+  def resolve_access(_user), do: :read_only
+end
+
 defmodule Observer.Web.Test.FruitsPage do
   use Observer.Web.Page
 
@@ -70,6 +77,11 @@ defmodule Observer.Web.Test.Router do
 
     observer_dashboard("/observer", pages: [fruits: Observer.Web.Test.FruitsPage])
     observer_dashboard("/observer-limited", as: :observer_limited, resolver: LimitedResolver)
+
+    observer_dashboard("/observer-read-only",
+      as: :observer_read_only,
+      resolver: ReadOnlyResolver
+    )
   end
 
   scope "/", ThisWontBeUsed, as: :this_wont_be_used do

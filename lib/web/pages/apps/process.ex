@@ -15,6 +15,7 @@ defmodule Observer.Web.Apps.Process do
   attr :node, :atom, required: true
   attr :metric, :string, required: true
   attr :metrics, :list, required: true
+  attr :access, :any, required: true
 
   def content(assigns) do
     info = assigns.info
@@ -101,6 +102,7 @@ defmodule Observer.Web.Apps.Process do
                 memory_monitor={@memory_monitor}
                 on_action="request_process_action"
                 node={@node}
+                access={@access}
               />
 
               <Core.table_process
