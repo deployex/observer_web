@@ -1,4 +1,4 @@
-import * as echarts from "echarts"
+import { initChart, onThemeChange, pageSurfaceColor, pageTextColor, themeSeriesSymbol } from "../lib/echarts_theme"
 
 // Hovering fires the tooltip formatter on every mousemove, so wait for the
 // pointer to settle on a node before requesting its details from the server.
@@ -7,12 +7,23 @@ const TOOLTIP_DEBOUNCE_MS = 200
 const ObserverEChart = {
   mounted() {
     const selector = "#" + this.el.id
+    this.dom = this.el.querySelector(selector + "-chart")
 
-    this.chart = echarts.init(this.el.querySelector(selector + "-chart"))
+    this.chart = initChart(this.dom)
     const option = JSON.parse(this.el.querySelector(selector + "-data").textContent)
 
     this.setChartOption(option)
     this.guardWheelZoom()
+
+    // echarts binds its theme at init time, so following a theme change means
+    // disposing and re-initializing the chart, then re-applying the option
+    // that was last set on it (setChartOption recomputes the theme-dependent
+    // bits below, like the label backdrop color).
+    this.disposeThemeWatcher = onThemeChange(() => {
+      this.chart.dispose()
+      this.chart = initChart(this.dom)
+      this.setChartOption(this.lastOption, true)
+    })
   },
   // The tree series has `roam: "zoom"`, which binds the mouse wheel to
   // chart zoom. That steals the wheel event from the page, so scrolling
@@ -47,6 +58,8 @@ const ObserverEChart = {
   destroyed() {
     clearTimeout(this.tooltipTimer)
     this.el.removeEventListener("wheel", this.onWheel, { capture: true })
+    this.disposeThemeWatcher()
+    this.chart.dispose()
   },
   setChartOption(option, notMerge) {
     const formatter = (args) => {
@@ -61,9 +74,32 @@ const ObserverEChart = {
       return id
     }
 
-    option.tooltip = { ...option.tooltip, formatter: formatter }
+    // `option` doubles as `this.lastOption` on a theme-change replay (see
+    // onThemeChange above), so this must build a new object rather than
+    // mutate `option` in place - otherwise the dark-mode label/symbol
+    // overrides below would get baked into the "raw" option permanently,
+    // and switching back to light would have nothing un-themed left to
+    // replay.
+    const themedSeries = (option.series || []).map((series) => {
+      const labeled = series.label?.backgroundColor
+        ? {
+            ...series,
+            // The tree node label backdrop is baked in server-side as a fixed
+            // white box (so edge lines don't cut through the text) - repaint
+            // it, and the text drawn on it, to match whichever page surface
+            // (light or dark) the chart currently sits on.
+            label: { ...series.label, backgroundColor: pageSurfaceColor(), color: pageTextColor() }
+          }
+        : series
 
-    this.chart.setOption(option, notMerge)
+      return themeSeriesSymbol(labeled)
+    })
+
+    this.lastOption = option
+    this.chart.setOption(
+      { ...option, tooltip: { ...option.tooltip, formatter }, series: themedSeries },
+      notMerge
+    )
   }
 };
 
