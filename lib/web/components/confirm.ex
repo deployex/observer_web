@@ -16,14 +16,18 @@ defmodule Observer.Web.Components.Confirm do
         phx-key="escape"
       >
         <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-          <div class="fixed inset-0 bg-white/75 transition-opacity" aria-hidden="true"></div>
+          <div
+            class="fixed inset-0 bg-white/75 dark:bg-gray-900/75 transition-opacity"
+            aria-hidden="true"
+          >
+          </div>
           <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
             &#8203;
           </span>
-          <div class="relative inline-block overflow-hidden text-left align-bottom bg-white border border-gray-200 shadow-md rounded-md transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
-            <div class="p-6 mx-auto mb-2 bg-white">
+          <div class="relative inline-block overflow-hidden text-left align-bottom bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-md rounded-md transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+            <div class="p-6 mx-auto mb-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
               <header class="mb-6 text-center">
-                <h3 class="mb-3 text-lg font-bold text-gray-900">
+                <h3 class="mb-3 text-lg font-bold text-gray-900 dark:text-white">
                   {render_slot(@header)}
                 </h3>
               </header>
@@ -46,7 +50,7 @@ defmodule Observer.Web.Components.Confirm do
     ~H"""
     <button
       id={"cancel-button-#{@id}"}
-      class="flex-1 px-4 py-2 border border-gray-800 rounded-full"
+      class="flex-1 px-4 py-2 border border-gray-800 dark:border-gray-300 rounded-full"
       phx-click="confirm-close-modal"
     >
       {render_slot(@inner_block)}
@@ -63,7 +67,7 @@ defmodule Observer.Web.Components.Confirm do
     ~H"""
     <button
       id={"confirm-button-#{@id}"}
-      class="flex-1 px-4 py-2 text-white bg-blue-600 rounded-full"
+      class="flex-1 px-4 py-2 text-white bg-blue-600 dark:bg-blue-700 rounded-full"
       phx-click={@event}
       phx-value-id={@value}
     >
