@@ -179,13 +179,15 @@ defmodule Observer.Web.Helpers do
   end
 
   @doc """
-  Parses `string` as a literal Elixir term - a number, atom, string, list, tuple, or map -
-  without ever evaluating a function call, a variable, or a module reference. Unlike
-  `Code.eval_string/1`, typing something here can't run arbitrary code.
+  Parses `string` as a literal Elixir term - a number, atom, string, list, tuple, map, or
+  struct - without ever evaluating a function call, a variable, or a bare module reference.
+  Unlike `Code.eval_string/1`, typing something here can't run arbitrary code.
 
-  Ranges and structs aren't literal data as far as this is concerned (building either requires
-  evaluating a call) and are rejected along with everything else that isn't one of the forms
-  above.
+  Ranges aren't literal data as far as this is concerned (building one requires evaluating a
+  call) and are rejected along with everything else that isn't one of the forms above.
+
+  Delegates the actual literal check to `Macro.quoted_literal?/1`, except for a leading sign on
+  a number (`"-5"`/`"+5"`), which that function doesn't accept but this one does.
 
   ## Examples
 
@@ -193,6 +195,8 @@ defmodule Observer.Web.Helpers do
     ...> assert {:ok, {:hello, :world}} = Helpers.parse_term("{:hello, :world}")
     ...> assert {:ok, -5} = Helpers.parse_term("-5")
     ...> assert {:ok, 5} = Helpers.parse_term("+5")
+    ...> assert {:ok, %{foo: 1}} = Helpers.parse_term("%{foo: 1}")
+    ...> assert :error = Helpers.parse_term("%{foo | bar: 1}")
     ...> assert :error = Helpers.parse_term("File.rm_rf!(\\"/\\")")
     ...> assert :error = Helpers.parse_term("some_var")
   """
@@ -204,20 +208,12 @@ defmodule Observer.Web.Helpers do
     else
       _not_literal -> :error
     end
+  rescue
+    _exception -> :error
   end
-
-  defp literal_term?(ast) when is_number(ast) or is_binary(ast) or is_atom(ast), do: true
 
   defp literal_term?({sign, _meta, [number]}) when sign in [:-, :+] and is_number(number),
     do: true
 
-  defp literal_term?({a, b}), do: literal_term?(a) and literal_term?(b)
-  defp literal_term?(list) when is_list(list), do: Enum.all?(list, &literal_term?/1)
-  defp literal_term?({:{}, _meta, elements}), do: Enum.all?(elements, &literal_term?/1)
-
-  defp literal_term?({:%{}, _meta, pairs}) do
-    Enum.all?(pairs, fn {key, value} -> literal_term?(key) and literal_term?(value) end)
-  end
-
-  defp literal_term?(_other), do: false
+  defp literal_term?(ast), do: Macro.quoted_literal?(ast)
 end

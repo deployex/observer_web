@@ -28,7 +28,10 @@ defmodule Observer.Web.Apps.PortActions do
             phx-click={@on_action}
             phx-value-action="kill"
             disabled={not Resolver.can?(:close_port, @access)}
-            class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+            class={
+              "flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip " <>
+                Core.gated_classes()
+            }
             title="Close the selected port"
           >
             <span>⛔</span>

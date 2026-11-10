@@ -146,7 +146,10 @@ defmodule Observer.Web.Profiling.Page do
             id="profiling-multi-select-run"
             phx-click="profiling-run"
             disabled={not Resolver.can?(:start_trace, @access)}
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80 disabled:pointer-events-none disabled:opacity-50"
+            class={
+              "phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80 " <>
+                Core.gated_classes()
+            }
           >
             RUN
           </button>
