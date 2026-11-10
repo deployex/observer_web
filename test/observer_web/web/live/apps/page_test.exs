@@ -608,6 +608,60 @@ defmodule Observer.Web.Apps.PageLiveTest do
              "border-red-200 focus:border-red-400 hover:border-red-300"
   end
 
+  test "Select Service+Apps and cannot execute code via the send message field", %{conn: conn} do
+    node = Node.self() |> to_string
+    service = Helpers.normalize_id(node)
+    test_pid_process = self()
+
+    ObserverWeb.RpcMock
+    |> stub(:call, fn node, module, function, args, timeout ->
+      :rpc.call(node, module, function, args, timeout)
+    end)
+    |> stub(:pinfo, fn pid, information ->
+      send(test_pid_process, {:apps_page_pid, self()})
+      :rpc.pinfo(pid, information)
+    end)
+
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/applications")
+
+    index_live
+    |> element("#apps-multi-select-toggle-options")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-apps-kernel-add-item")
+    |> render_click()
+
+    index_live
+    |> element("#apps-multi-select-services-#{service}-add-item")
+    |> render_click()
+
+    pid = Enum.random(:erlang.processes())
+
+    id = "#{inspect(pid)}"
+    series_name = "#{Node.self()}::app:kernel"
+
+    assert_receive {:apps_page_pid, apps_page_pid}, 1_000
+
+    send(apps_page_pid, {"request-process", %{"id" => id, "series_name" => series_name}})
+
+    # A function call, rather than a literal term, must be rejected by both the live
+    # validation and the actual submit - it must never be evaluated.
+    payload = "Process.put(:access_control_test_rce, :pwned)"
+
+    assert index_live
+           |> element("#process-send-msg-form")
+           |> render_change(%{"process-send-message" => payload}) =~
+             "border-red-200 focus:border-red-400 hover:border-red-300"
+
+    assert index_live
+           |> element("#process-send-msg-form")
+           |> render_submit(%{"process-send-message" => payload}) =~
+             "Message must be a valid Elixir term"
+  end
+
   test "Select Service+Apps and select a port to request information", %{conn: conn} do
     node = Node.self() |> to_string
     service = Helpers.normalize_id(node)

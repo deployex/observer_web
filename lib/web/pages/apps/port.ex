@@ -13,6 +13,7 @@ defmodule Observer.Web.Apps.Port do
   attr :node, :atom, required: true
   attr :metric, :string, required: true
   attr :metrics, :list, required: true
+  attr :access, :any, required: true
 
   def content(assigns) do
     info = assigns.info
@@ -53,6 +54,7 @@ defmodule Observer.Web.Apps.Port do
                 on_action="request_port_action"
                 memory_monitor={@memory_monitor}
                 node={@node}
+                access={@access}
               />
               <Core.table_process id="port-overview-table" title="Overview" rows={@port_overview}>
                 <:col :let={item}>

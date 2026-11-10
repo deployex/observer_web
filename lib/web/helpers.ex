@@ -177,4 +177,43 @@ defmodule Observer.Web.Helpers do
   def string_to_port(string) do
     string |> String.to_charlist() |> :erlang.list_to_port()
   end
+
+  @doc """
+  Parses `string` as a literal Elixir term - a number, atom, string, list, tuple, map, or
+  struct - without ever evaluating a function call, a variable, or a bare module reference.
+  Unlike `Code.eval_string/1`, typing something here can't run arbitrary code.
+
+  Ranges aren't literal data as far as this is concerned (building one requires evaluating a
+  call) and are rejected along with everything else that isn't one of the forms above.
+
+  Delegates the actual literal check to `Macro.quoted_literal?/1`, except for a leading sign on
+  a number (`"-5"`/`"+5"`), which that function doesn't accept but this one does.
+
+  ## Examples
+
+    iex> alias Observer.Web.Helpers
+    ...> assert {:ok, {:hello, :world}} = Helpers.parse_term("{:hello, :world}")
+    ...> assert {:ok, -5} = Helpers.parse_term("-5")
+    ...> assert {:ok, 5} = Helpers.parse_term("+5")
+    ...> assert {:ok, %{foo: 1}} = Helpers.parse_term("%{foo: 1}")
+    ...> assert :error = Helpers.parse_term("%{foo | bar: 1}")
+    ...> assert :error = Helpers.parse_term("File.rm_rf!(\\"/\\")")
+    ...> assert :error = Helpers.parse_term("some_var")
+  """
+  def parse_term(string) do
+    with {:ok, quoted} <- Code.string_to_quoted(string),
+         true <- literal_term?(quoted) do
+      {term, _bindings} = Code.eval_quoted(quoted)
+      {:ok, term}
+    else
+      _not_literal -> :error
+    end
+  rescue
+    _exception -> :error
+  end
+
+  defp literal_term?({sign, _meta, [number]}) when sign in [:-, :+] and is_number(number),
+    do: true
+
+  defp literal_term?(ast), do: Macro.quoted_literal?(ast)
 end

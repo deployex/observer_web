@@ -15,6 +15,7 @@ defmodule Observer.Web.Profiling.Page do
   alias Observer.Web.Components.Core
   alias Observer.Web.Components.MultiSelectList
   alias Observer.Web.Page
+  alias Observer.Web.Resolver
   alias Observer.Web.Tracing.Selection
   alias ObserverWeb.Tracer
 
@@ -144,7 +145,11 @@ defmodule Observer.Web.Profiling.Page do
             :if={@trace_idle? and @trace_owner?}
             id="profiling-multi-select-run"
             phx-click="profiling-run"
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80"
+            disabled={not Resolver.can?(:start_trace, @access)}
+            class={
+              "phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80 " <>
+                Core.gated_classes()
+            }
           >
             RUN
           </button>
@@ -325,8 +330,10 @@ defmodule Observer.Web.Profiling.Page do
   def handle_parent_event(
         "profiling-run",
         _data,
-        %{assigns: %{node_info: node_info, form: form}} = socket
+        %{assigns: %{node_info: node_info, form: form, access: access}} = socket
       ) do
+    Resolver.enforce_access!(:start_trace, access)
+
     tracer_state = Tracer.state()
 
     if tracer_state.status == :idle do

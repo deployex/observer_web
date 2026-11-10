@@ -5,11 +5,14 @@ defmodule Observer.Web.Apps.ProcessActions do
 
   use Observer.Web, :html
 
+  alias Observer.Web.Resolver
+
   attr :id, :map, required: true
   attr :on_action, :any, required: true
   attr :form, :map, required: true
   attr :memory_monitor, :boolean, required: true
   attr :node, :atom, required: true
+  attr :access, :any, required: true
 
   def content(assigns) do
     ~H"""
@@ -24,7 +27,11 @@ defmodule Observer.Web.Apps.ProcessActions do
             id="process-clean-memory-button"
             phx-click={@on_action}
             phx-value-action="garbage_collect"
-            class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip"
+            disabled={not Resolver.can?(:garbage_collect_process, @access)}
+            class={
+              "flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip " <>
+                Core.gated_classes()
+            }
             title="Run garbage collection on this process"
           >
             <span>🧹</span>
@@ -35,7 +42,11 @@ defmodule Observer.Web.Apps.ProcessActions do
             id="process-kill-button"
             phx-click={@on_action}
             phx-value-action="kill"
-            class="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip"
+            disabled={not Resolver.can?(:kill_process, @access)}
+            class={
+              "flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip " <>
+                Core.gated_classes()
+            }
             title="Terminate the selected process"
           >
             <span>⛔</span>
@@ -70,8 +81,14 @@ defmodule Observer.Web.Apps.ProcessActions do
                 type="submit"
                 id="process-send-message-button"
                 phx-disable-with="Sending..."
-                class="absolute right-1 top-1 rounded bg-slate-800 py-1 px-2.5 border border-transparent text-center text-sm text-white transition-all shadow-sm hover:shadow focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
-                disabled={@form.errors != [] or @form.params["message"] == ""}
+                class={
+                  "absolute right-1 top-1 rounded bg-slate-800 py-1 px-2.5 border border-transparent text-center text-sm text-white transition-all shadow-sm hover:shadow focus:bg-slate-700 focus:shadow-none active:bg-slate-700 hover:bg-slate-700 active:shadow-none " <>
+                    Core.gated_classes()
+                }
+                disabled={
+                  @form.errors != [] or @form.params["message"] == "" or
+                    not Resolver.can?(:send_message, @access)
+                }
               >
                 Send
               </button>

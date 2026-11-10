@@ -40,7 +40,7 @@ defmodule Observer.Web.Page do
 
   The page shows up in the navigation bar as `QUEUE` and is served at
   `/observer/queue`. Within the component, the standard dashboard assigns are available:
-  `@access` (`:all` or `:read_only`), `@user`, `@params`, `@theme` and `@page`.
+  `@access` (see `Observer.Web.Resolver`), `@user`, `@params`, `@theme` and `@page`.
 
   ## Callback flow
 
@@ -48,6 +48,17 @@ defmodule Observer.Web.Page do
   * `c:handle_params/3` - called on every `c:Phoenix.LiveView.handle_params/3`.
   * `c:handle_info/2` - called for any message the parent LiveView does not handle itself.
   * `c:handle_parent_event/3` - called for any `phx-` event the parent does not handle itself.
+
+  ## Access control
+
+  If a page performs any action that mutates the observed system - killing a process, writing
+  to an ETS table, anything a host might want to restrict to admins - `c:handle_parent_event/3`
+  must call `Observer.Web.Resolver.enforce_access!/2` for that action before performing it, in
+  addition to disabling the triggering control with `Observer.Web.Resolver.can?/2`. Both matter:
+  disabling the control keeps a restricted user from seeing it as available, but only the
+  handler-side check stops a client that sends the underlying event directly, bypassing the
+  control entirely. Checking just one of the two is not enough - see the built-in pages (e.g.
+  `Observer.Web.Apps.Page`) for the pattern.
   """
 
   alias Phoenix.LiveView.Socket

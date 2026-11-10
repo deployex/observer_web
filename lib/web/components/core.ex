@@ -541,4 +541,14 @@ defmodule Observer.Web.Components.Core do
     </label>
     """
   end
+
+  @doc """
+  Tailwind classes that visually disable a control when its `disabled` attribute is true.
+
+  Pair with `Observer.Web.Resolver.can?/2` to gate a destructive action in the UI - e.g.
+  `disabled={not Resolver.can?(:kill_process, @access)}` alongside
+  `class={"... " <> Core.gated_classes()}` - so every gated control fades out the same way
+  instead of each button hand-rolling its own `disabled:` utilities.
+  """
+  def gated_classes, do: "disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
 end
