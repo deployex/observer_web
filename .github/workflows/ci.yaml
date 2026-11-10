@@ -64,10 +64,18 @@ jobs:
         run: npm ci --prefix assets
 
       - name: Install Elixir dependencies
-        run: mix do deps.get + compile --warnings-as-errors
+        run: mix deps.get
 
+      # tailwind/esbuild are dev-only deps (mix.exs), and the real build has to land on disk
+      # before the next step compiles Observer.Web.Assets, which reads app.css/app.js at
+      # compile time - hence building under MIX_ENV=dev here, ahead of the real compile below.
       - name: Build assets
         run: mix assets.build
+        env:
+          MIX_ENV: dev
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
 
   test:
     name: Test (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})
@@ -120,8 +128,16 @@ jobs:
       - name: Install npm dependencies
         run: npm ci --prefix assets
 
+      - name: Install Elixir dependencies
+        run: mix deps.get
+
+      # tailwind/esbuild are dev-only deps (mix.exs), and the real build has to land on disk
+      # before the implicit compile `mix coveralls.html` triggers next, which compiles
+      # Observer.Web.Assets - that module reads app.css/app.js at compile time.
       - name: Build assets
         run: mix assets.build
+        env:
+          MIX_ENV: dev
 
       - name: Run tests
         run: mix coveralls.html
@@ -170,10 +186,18 @@ jobs:
         run: npm ci --prefix assets
 
       - name: Install Elixir dependencies
-        run: mix do deps.get + compile --warnings-as-errors
+        run: mix deps.get
 
+      # tailwind/esbuild are dev-only deps (mix.exs), and the real build has to land on disk
+      # before the next step compiles Observer.Web.Assets, which reads app.css/app.js at
+      # compile time - hence building under MIX_ENV=dev here, ahead of the real compile below.
       - name: Build assets
         run: mix assets.build
+        env:
+          MIX_ENV: dev
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
 
       - name: Run mix deps.unlock
         run: mix deps.unlock --check-unused
