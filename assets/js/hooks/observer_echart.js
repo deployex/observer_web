@@ -12,6 +12,19 @@ const ObserverEChart = {
     const option = JSON.parse(this.el.querySelector(selector + "-data").textContent)
 
     this.setChartOption(option)
+    this.guardWheelZoom()
+  },
+  // The tree series has `roam: "zoom"`, which binds the mouse wheel to
+  // chart zoom. That steals the wheel event from the page, so scrolling
+  // past the chart instead zooms it in and out. Capture the wheel event
+  // above the chart and stop it from reaching echarts' own listener
+  // unless a modifier key is held, so a plain scroll passes through to
+  // the page and only a deliberate ctrl/cmd+scroll zooms the chart.
+  guardWheelZoom() {
+    this.onWheel = (event) => {
+      if (!event.ctrlKey && !event.metaKey) event.stopPropagation()
+    }
+    this.el.addEventListener("wheel", this.onWheel, { capture: true, passive: true })
   },
   updated() {
     const selector = "#" + this.el.id
@@ -33,6 +46,7 @@ const ObserverEChart = {
   },
   destroyed() {
     clearTimeout(this.tooltipTimer)
+    this.el.removeEventListener("wheel", this.onWheel, { capture: true })
   },
   setChartOption(option, notMerge) {
     const formatter = (args) => {
