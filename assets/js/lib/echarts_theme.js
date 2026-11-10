@@ -43,12 +43,22 @@ echarts.registerTheme(THEME_NAME, {
 // the page rather than the chart's own surface.
 const PAGE_SURFACE = { light: "#ffffff", dark: "#1f2937" }
 
+// For label text drawn directly against that page surface (as opposed to
+// inside the chart's own themed area, where the theme's `textStyle.color`
+// already applies) - e.g. a tree node's label, whose backdrop follows
+// `pageSurfaceColor()` above.
+const PAGE_TEXT = { light: "#111827", dark: TEXT } // gray-900 / gray-200
+
 export function isDarkMode() {
   return document.documentElement.classList.contains("dark")
 }
 
 export function pageSurfaceColor() {
   return isDarkMode() ? PAGE_SURFACE.dark : PAGE_SURFACE.light
+}
+
+export function pageTextColor() {
+  return isDarkMode() ? PAGE_TEXT.dark : PAGE_TEXT.light
 }
 
 export function initChart(dom) {

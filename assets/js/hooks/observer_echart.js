@@ -1,4 +1,4 @@
-import { initChart, onThemeChange, pageSurfaceColor } from "../lib/echarts_theme"
+import { initChart, onThemeChange, pageSurfaceColor, pageTextColor } from "../lib/echarts_theme"
 
 // Hovering fires the tooltip formatter on every mousemove, so wait for the
 // pointer to settle on a node before requesting its details from the server.
@@ -77,12 +77,18 @@ const ObserverEChart = {
     option.tooltip = { ...option.tooltip, formatter: formatter }
 
     // The tree node label backdrop is baked in server-side as a fixed white box
-    // (so edge lines don't cut through the text) - repaint it to match whichever
-    // page surface (light or dark) the chart currently sits on.
+    // (so edge lines don't cut through the text) - repaint it, and the text
+    // drawn on it, to match whichever page surface (light or dark) the chart
+    // currently sits on. Without the color repaint, the label text stays at
+    // echarts' default near-black and becomes unreadable once the backdrop
+    // above switches to the dark surface.
     if (option.series) {
       option.series = option.series.map((series) =>
         series.label?.backgroundColor
-          ? { ...series, label: { ...series.label, backgroundColor: pageSurfaceColor() } }
+          ? {
+              ...series,
+              label: { ...series.label, backgroundColor: pageSurfaceColor(), color: pageTextColor() }
+            }
           : series
       )
     }
