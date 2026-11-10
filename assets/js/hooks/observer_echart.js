@@ -1,4 +1,4 @@
-import { initChart, onThemeChange, pageSurfaceColor, pageTextColor } from "../lib/echarts_theme"
+import { initChart, onThemeChange, pageSurfaceColor, pageTextColor, themeSeriesSymbol } from "../lib/echarts_theme"
 
 // Hovering fires the tooltip formatter on every mousemove, so wait for the
 // pointer to settle on a node before requesting its details from the server.
@@ -74,27 +74,32 @@ const ObserverEChart = {
       return id
     }
 
-    option.tooltip = { ...option.tooltip, formatter: formatter }
+    // `option` doubles as `this.lastOption` on a theme-change replay (see
+    // onThemeChange above), so this must build a new object rather than
+    // mutate `option` in place - otherwise the dark-mode label/symbol
+    // overrides below would get baked into the "raw" option permanently,
+    // and switching back to light would have nothing un-themed left to
+    // replay.
+    const themedSeries = (option.series || []).map((series) => {
+      const labeled = series.label?.backgroundColor
+        ? {
+            ...series,
+            // The tree node label backdrop is baked in server-side as a fixed
+            // white box (so edge lines don't cut through the text) - repaint
+            // it, and the text drawn on it, to match whichever page surface
+            // (light or dark) the chart currently sits on.
+            label: { ...series.label, backgroundColor: pageSurfaceColor(), color: pageTextColor() }
+          }
+        : series
 
-    // The tree node label backdrop is baked in server-side as a fixed white box
-    // (so edge lines don't cut through the text) - repaint it, and the text
-    // drawn on it, to match whichever page surface (light or dark) the chart
-    // currently sits on. Without the color repaint, the label text stays at
-    // echarts' default near-black and becomes unreadable once the backdrop
-    // above switches to the dark surface.
-    if (option.series) {
-      option.series = option.series.map((series) =>
-        series.label?.backgroundColor
-          ? {
-              ...series,
-              label: { ...series.label, backgroundColor: pageSurfaceColor(), color: pageTextColor() }
-            }
-          : series
-      )
-    }
+      return themeSeriesSymbol(labeled)
+    })
 
     this.lastOption = option
-    this.chart.setOption(option, notMerge)
+    this.chart.setOption(
+      { ...option, tooltip: { ...option.tooltip, formatter }, series: themedSeries },
+      notMerge
+    )
   }
 };
 

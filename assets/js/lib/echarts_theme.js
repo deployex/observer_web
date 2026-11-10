@@ -61,6 +61,20 @@ export function pageTextColor() {
   return isDarkMode() ? PAGE_TEXT.dark : PAGE_TEXT.light
 }
 
+// echarts' default point symbol for line/tree series is "emptyCircle" - a
+// ring whose center it always fills with a hardcoded white, regardless of
+// theme (it's baked into the renderer, not exposed through the option
+// schema). That reads fine on a light page but leaves a stark white dot on
+// the dark surface, so swap it for a solid circle in dark mode only; light
+// mode keeps the original hollow-ring look.
+export function themeSeriesSymbol(series) {
+  if (!isDarkMode()) return series
+  if (series.type !== "line" && series.type !== "tree") return series
+
+  const symbol = series.symbol || "emptyCircle"
+  return symbol === "emptyCircle" ? { ...series, symbol: "circle" } : series
+}
+
 export function initChart(dom) {
   return echarts.init(dom, isDarkMode() ? THEME_NAME : null)
 }

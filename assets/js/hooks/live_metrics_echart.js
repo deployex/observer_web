@@ -1,4 +1,12 @@
-import { initChart, onThemeChange } from "../lib/echarts_theme"
+import { initChart, onThemeChange, themeSeriesSymbol } from "../lib/echarts_theme"
+
+// echarts' default line-series symbol always fills with a hardcoded white
+// center - fine on a light page, a stark white dot on the dark surface.
+// themeSeriesSymbol swaps it for a solid circle in dark mode (see its
+// definition), recomputed fresh each time against whichever theme is
+// current, so this.currentOption itself stays a plain, theme-independent
+// record of the data (same reasoning as the comment below).
+const themedSeries = (series) => series.map(themeSeriesSymbol)
 
 const LiveMetricsEChart = {
   mounted() {
@@ -14,7 +22,7 @@ const LiveMetricsEChart = {
     // theme's colors if replayed after a theme switch.
     this.currentOption = dataConfig
     this.chart = initChart(this.dom)
-    this.chart.setOption(this.currentOption)
+    this.chart.setOption({ ...this.currentOption, series: themedSeries(this.currentOption.series) })
     this.graph_cols = columns
 
     // echarts binds its theme at init time, so following a theme change means
@@ -23,7 +31,7 @@ const LiveMetricsEChart = {
     this.disposeThemeWatcher = onThemeChange(() => {
       this.chart.dispose()
       this.chart = initChart(this.dom)
-      this.chart.setOption(this.currentOption)
+      this.chart.setOption({ ...this.currentOption, series: themedSeries(this.currentOption.series) })
     })
   },
   updated() {
@@ -33,7 +41,7 @@ const LiveMetricsEChart = {
 
     if (reset) {
       this.currentOption = dataConfig
-      this.chart.setOption(this.currentOption)
+      this.chart.setOption({ ...this.currentOption, series: themedSeries(this.currentOption.series) })
     } else {
       const updatedXAxisData = this.currentOption.xAxis.data.concat(dataConfig.xAxis.data)
       const updatedSeries = this.currentOption.series.map((series, index) => ({
@@ -48,7 +56,7 @@ const LiveMetricsEChart = {
         series: updatedSeries
       }
 
-      this.chart.setOption({ xAxis: { data: updatedXAxisData }, series: updatedSeries })
+      this.chart.setOption({ xAxis: { data: updatedXAxisData }, series: themedSeries(updatedSeries) })
     }
     if (columns != this.columns) {
       this.chart.resize()
