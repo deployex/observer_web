@@ -20,7 +20,7 @@ defmodule Observer.Web.Components.Confirm do
           <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
             &#8203;
           </span>
-          <div class="inline-block overflow-hidden text-left align-bottom bg-white border border-gray-200 shadow-md rounded-md transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
+          <div class="relative inline-block overflow-hidden text-left align-bottom bg-white border border-gray-200 shadow-md rounded-md transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
             <div class="p-6 mx-auto mb-2 bg-white">
               <header class="mb-6 text-center">
                 <h3 class="mb-3 text-lg font-bold text-gray-900">
