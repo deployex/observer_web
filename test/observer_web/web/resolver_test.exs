@@ -24,6 +24,11 @@ defmodule Observer.Web.ResolverTest do
       refute Resolver.can?(:close_port, access)
       refute Resolver.can?(:send_message, access)
     end
+
+    test "fails closed for an access value it doesn't recognize" do
+      refute Resolver.can?(:kill_process, {:forbidden, "/"})
+      refute Resolver.can?(:kill_process, nil)
+    end
   end
 
   describe "enforce_access!/2" do

@@ -142,7 +142,13 @@ defmodule Observer.Web.Resolver do
 
       def resolve_access(user) do
         if user.admin? do
-          [kill_process: true, close_port: true, send_message: true, start_trace: true]
+          [
+            kill_process: true,
+            close_port: true,
+            send_message: true,
+            garbage_collect_process: true,
+            start_trace: true
+          ]
         else
           :read_only
         end
@@ -196,6 +202,9 @@ defmodule Observer.Web.Resolver do
   def can?(_action, :all), do: true
   def can?(_action, :read_only), do: false
   def can?(action, opts) when is_list(opts), do: Keyword.get(opts, action, false)
+  # `{:forbidden, _}` (or anything else) shouldn't normally reach here - a resolver returning it
+  # keeps the dashboard from mounting at all - but fail closed rather than crash if it ever does.
+  def can?(_action, _access), do: false
 
   @doc """
   Raise `Observer.Web.AccessError` unless `action` is permitted under `access`.

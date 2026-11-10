@@ -317,7 +317,7 @@ defmodule Observer.Web.Apps.Page do
     pid_string = current_selected_id.id_string
     pid = Helpers.string_to_pid(pid_string)
 
-    case parse_term(message) do
+    case Helpers.parse_term(message) do
       {:ok, term} ->
         send(pid, term)
 
@@ -400,7 +400,7 @@ defmodule Observer.Web.Apps.Page do
       ) do
     # Validate that the message is a literal Elixir term, without evaluating any function call.
     errors =
-      case parse_term(message) do
+      case Helpers.parse_term(message) do
         {:ok, _term} -> []
         :error -> [{:message, {"invalid elixir format", []}}]
       end
@@ -1012,31 +1012,6 @@ defmodule Observer.Web.Apps.Page do
       id: Helpers.identifier_to_safe_id(id)
     }
   end
-
-  # Parses `string` as a literal Elixir term (number, atom, string, list, tuple, or map) without
-  # ever evaluating a function call, a variable, or a module reference - unlike `Code.eval_string/1`,
-  # typing something here can't run arbitrary code.
-  defp parse_term(string) do
-    with {:ok, quoted} <- Code.string_to_quoted(string),
-         true <- literal_term?(quoted) do
-      {term, _bindings} = Code.eval_quoted(quoted)
-      {:ok, term}
-    else
-      _not_literal -> :error
-    end
-  end
-
-  defp literal_term?(ast) when is_number(ast) or is_binary(ast) or is_atom(ast), do: true
-  defp literal_term?({:-, _meta, [number]}) when is_number(number), do: true
-  defp literal_term?({a, b}), do: literal_term?(a) and literal_term?(b)
-  defp literal_term?(list) when is_list(list), do: Enum.all?(list, &literal_term?/1)
-  defp literal_term?({:{}, _meta, elements}), do: Enum.all?(elements, &literal_term?/1)
-
-  defp literal_term?({:%{}, _meta, pairs}) do
-    Enum.all?(pairs, fn {key, value} -> literal_term?(key) and literal_term?(value) end)
-  end
-
-  defp literal_term?(_other), do: false
 
   defp aggregation_rows(%{observer_data: observer_data, apps_stats: apps_stats}) do
     observer_data
