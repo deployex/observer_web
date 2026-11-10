@@ -6,12 +6,26 @@ on:
 
 env:
   MIX_ENV: test
+  # The static analysis job doesn't vary by Elixir/OTP version, so it stays pinned to one -
+  # the same version as the upper end of the test matrix below.
   elixir_version: '1.20.1'
   otp_version: '29.0.2'
+  node_version: '20'
 
 jobs:
   setup:
-    name: Setup
+    name: Setup (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Supported versions policy (see "Supported Versions" in the README): the last two
+          # major Erlang/OTP releases. 1.19.5 is the floor of the `elixir: "~> 1.19"`
+          # requirement declared in mix.exs.
+          - elixir: '1.19.5'
+            otp: '28.5.0.6'
+          - elixir: '1.20.1'
+            otp: '29.0.2'
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -19,8 +33,13 @@ jobs:
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
         with:
-          otp-version: '${{ env.otp_version }}'
-          elixir-version: '${{ env.elixir_version }}'
+          otp-version: '${{ matrix.otp }}'
+          elixir-version: '${{ matrix.elixir }}'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '${{ env.node_version }}'
 
       - name: Cache
         uses: actions/cache@v4
@@ -29,19 +48,48 @@ jobs:
             _build
             deps
           key: |
-            observer-web-${{ hashFiles('mix.lock') }}-2025-02-01
+            observer-web-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('mix.lock') }}-2025-02-01
           restore-keys: |
-            observer-web-
+            observer-web-${{ matrix.elixir }}-${{ matrix.otp }}-
 
-      - name: Seed fake assets
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: assets/node_modules
+          key: |
+            observer-web-assets-${{ hashFiles('assets/package-lock.json') }}
+
+      - name: Seed static directory
         run: mkdir -p priv/static && touch priv/static/app.css && touch priv/static/app.js
-        
+
+      - name: Install npm dependencies
+        run: npm ci --prefix assets
+
       - name: Install Elixir dependencies
-        run: mix do deps.get + compile --warnings-as-errors
+        run: mix deps.get
+
+      # tailwind/esbuild are dev-only deps (mix.exs), and the real build has to land on disk
+      # before the next step compiles Observer.Web.Assets, which reads app.css/app.js at
+      # compile time - hence building under MIX_ENV=dev here, ahead of the real compile below.
+      - name: Build assets
+        run: mix assets.build
+        env:
+          MIX_ENV: dev
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
 
   test:
-    name: Test
+    name: Test (Elixir ${{ matrix.elixir }} / OTP ${{ matrix.otp }})
     needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - elixir: '1.19.5'
+            otp: '28.5.0.6'
+          - elixir: '1.20.1'
+            otp: '29.0.2'
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
@@ -50,8 +98,13 @@ jobs:
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
         with:
-          otp-version: '${{ env.otp_version }}'
-          elixir-version: '${{ env.elixir_version }}'
+          otp-version: '${{ matrix.otp }}'
+          elixir-version: '${{ matrix.elixir }}'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '${{ env.node_version }}'
 
       - name: Cache
         uses: actions/cache@v4
@@ -60,12 +113,33 @@ jobs:
             _build
             deps
           key: |
-            observer-web-${{ hashFiles('mix.lock') }}-2025-02-01
+            observer-web-${{ matrix.elixir }}-${{ matrix.otp }}-${{ hashFiles('mix.lock') }}-2025-02-01
           restore-keys: |
-            observer-web-
+            observer-web-${{ matrix.elixir }}-${{ matrix.otp }}-
 
-      - name: Seed fake assets
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: assets/node_modules
+          key: |
+            observer-web-assets-${{ hashFiles('assets/package-lock.json') }}
+
+      - name: Seed static directory
         run: mkdir -p priv/static && touch priv/static/app.css && touch priv/static/app.js
+
+      - name: Install npm dependencies
+        run: npm ci --prefix assets
+
+      - name: Install Elixir dependencies
+        run: mix deps.get
+
+      # tailwind/esbuild are dev-only deps (mix.exs), and the real build has to land on disk
+      # before the implicit compile `mix coveralls.html` triggers next, which compiles
+      # Observer.Web.Assets - that module reads app.css/app.js at compile time.
+      - name: Build assets
+        run: mix assets.build
+        env:
+          MIX_ENV: dev
 
       - name: Run tests
         run: mix coveralls.html
@@ -84,6 +158,11 @@ jobs:
           otp-version: '${{ env.otp_version }}'
           elixir-version: '${{ env.elixir_version }}'
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '${{ env.node_version }}'
+
       - name: Cache
         uses: actions/cache@v4
         with:
@@ -91,15 +170,36 @@ jobs:
             _build
             deps
           key: |
-            observer-web-${{ hashFiles('mix.lock') }}-2025-02-01
+            observer-web-${{ env.elixir_version }}-${{ env.otp_version }}-${{ hashFiles('mix.lock') }}-2025-02-01
           restore-keys: |
-            observer-web-
+            observer-web-${{ env.elixir_version }}-${{ env.otp_version }}-
 
-      - name: Seed fake assets
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: assets/node_modules
+          key: |
+            observer-web-assets-${{ hashFiles('assets/package-lock.json') }}
+
+      - name: Seed static directory
         run: mkdir -p priv/static && touch priv/static/app.css && touch priv/static/app.js
-        
+
+      - name: Install npm dependencies
+        run: npm ci --prefix assets
+
       - name: Install Elixir dependencies
-        run: mix do deps.get + compile --warnings-as-errors
+        run: mix deps.get
+
+      # tailwind/esbuild are dev-only deps (mix.exs), and the real build has to land on disk
+      # before the next step compiles Observer.Web.Assets, which reads app.css/app.js at
+      # compile time - hence building under MIX_ENV=dev here, ahead of the real compile below.
+      - name: Build assets
+        run: mix assets.build
+        env:
+          MIX_ENV: dev
+
+      - name: Compile
+        run: mix compile --warnings-as-errors
 
       - name: Run mix deps.unlock
         run: mix deps.unlock --check-unused

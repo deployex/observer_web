@@ -52,6 +52,20 @@ library is part of the [DeployEx][dye] project.
 
 See the [installation guide](https://hexdocs.pm/observer_web/installation.html) for details on installing and Configuring.
 
+## Supported Versions
+
+Observer Web follows the same support policy as [DeployEx][dye]: the last two major Erlang/OTP releases, and the last two major Phoenix releases.
+The `elixir: "~> 1.19"` requirement in `mix.exs` tracks the lowest Elixir version that still runs on the older of those two OTP releases.
+CI exercises both ends of that range on every pull request - see `.github/workflows/ci.yaml`.
+
+| | Policy | Currently |
+| --- | --- | --- |
+| Erlang/OTP | last 2 major releases | 28, 29 |
+| Elixir | lowest version supporting the older OTP release above | `~> 1.19` |
+| Phoenix | last 2 major releases | 1.7, 1.8 |
+
+As each project's major version moves forward, these floors move with it - a dropped OTP or Phoenix release is a breaking change for Observer Web too.
+
 ## Running Observer Web as standalone (for testing and development)
 
 ### Download dependencies

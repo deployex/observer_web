@@ -14,7 +14,9 @@ defmodule ObserverWeb.MixProject do
       docs: docs(),
       extra_section: "GUIDES",
       extras: extras(),
-      elixir: "~> 1.18",
+      # Supported versions policy: the last two major Erlang/OTP releases and the last two
+      # major Phoenix releases - see "Supported Versions" in the README for why.
+      elixir: "~> 1.19",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
