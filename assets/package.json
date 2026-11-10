@@ -3,7 +3,7 @@
   "license": "MIT",
   "scripts": {},
   "dependencies": {
-    "topbar": "^1.0.1",
+    "topbar": "^3.0.1",
     "echarts": "^6.1.0"
   }
 }
