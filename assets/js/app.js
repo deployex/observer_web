@@ -10,6 +10,7 @@ import NavOverflow from "./hooks/nav_overflow";
 import ScrollBottom from "./hooks/scroll_bottom";
 import Themer from "./hooks/themer";
 import AutoDismissFlash from "./hooks/auto_dismiss_flash";
+import Countdown from "./hooks/countdown";
 
 const hooks = {
   LiveMetricsEChart,
@@ -19,6 +20,7 @@ const hooks = {
   ScrollBottom,
   Themer,
   AutoDismissFlash,
+  Countdown,
 };
 
 // Topbar ---

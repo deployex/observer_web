@@ -4,12 +4,12 @@ defmodule Observer.Web.Apps.Legend do
 
   def content(assigns) do
     ~H"""
-    <div class="p-3 border border-black dark:border-gray-400 relative mt-5 bg-white dark:bg-gray-800">
-      <h2 class="absolute -top-3 left-3 px-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
+    <div class="p-3 border border-base-300 relative mt-5 bg-base-100">
+      <h2 class="absolute -top-3 left-3 px-2 bg-base-100 text-base-content">
         Legend
       </h2>
       <div class="flex items-center">
-        <span class="text-gray-600 dark:text-neutral-400">Process (App)</span>
+        <span class="text-muted">Process (App)</span>
         <div class="w-6 h-6 mr-3 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -25,7 +25,7 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-400">Supervisor</span>
+        <span class="text-muted">Supervisor</span>
         <div class="w-6 h-6 rounded-lg mr-3 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -41,7 +41,7 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-400">Process (Worker)</span>
+        <span class="text-muted">Process (Worker)</span>
         <div class="w-6 h-6 rounded-full mr-3 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -57,7 +57,7 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-400">Port</span>
+        <span class="text-muted">Port</span>
         <div class="w-6 h-6 mr-2 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -73,7 +73,7 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-400">Reference</span>
+        <span class="text-muted">Reference</span>
         <div class="w-6 h-6 rounded-lg mr-3 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -89,7 +89,7 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-400">Link</span>
+        <span class="text-muted">Link</span>
         <div class="w-6 h-6 mr-2 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -105,7 +105,7 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-400">Monitor</span>
+        <span class="text-muted">Monitor</span>
         <div class="w-6 h-6 mr-2 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -121,7 +121,7 @@ defmodule Observer.Web.Apps.Legend do
           </svg>
         </div>
 
-        <span class="text-gray-600 dark:text-neutral-400">Monitored by</span>
+        <span class="text-muted">Monitored by</span>
         <div class="w-6 h-6 mr-2 flex items-center justify-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"

@@ -605,7 +605,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     assert index_live
            |> element("#process-send-msg-form")
            |> render_change(%{"process-send-message" => "invalid"}) =~
-             "border-red-200 focus:border-red-400 hover:border-red-300"
+             "border-error focus:border-error hover:border-error"
   end
 
   test "Select Service+Apps and cannot execute code via the send message field", %{conn: conn} do
@@ -654,7 +654,7 @@ defmodule Observer.Web.Apps.PageLiveTest do
     assert index_live
            |> element("#process-send-msg-form")
            |> render_change(%{"process-send-message" => payload}) =~
-             "border-red-200 focus:border-red-400 hover:border-red-300"
+             "border-error focus:border-error hover:border-error"
 
     assert index_live
            |> element("#process-send-msg-form")

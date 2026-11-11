@@ -6,6 +6,7 @@
 
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
+@import "./tokens.css";
 
 @source "../../lib/**/*.*ex";
 
@@ -16,4 +17,28 @@
   --spacing-72: 18rem;
   --spacing-84: 21rem;
   --spacing-96: 24rem;
+
+  /* Backed by the CSS variables in tokens.css, which already flip between light and dark - so
+     classes built on these (bg-primary, text-base-content, etc.) need no separate dark: variant. */
+  --color-base-100: var(--dx-base-100);
+  --color-base-200: var(--dx-base-200);
+  --color-base-300: var(--dx-base-300);
+  --color-base-content: var(--dx-base-content);
+  --color-muted: var(--dx-muted);
+
+  --color-primary: var(--dx-primary);
+  --color-primary-content: var(--dx-primary-content);
+  --color-secondary: var(--dx-secondary);
+  --color-secondary-content: var(--dx-secondary-content);
+  --color-neutral: var(--dx-neutral);
+  --color-neutral-content: var(--dx-neutral-content);
+
+  --color-info: var(--dx-info);
+  --color-info-content: var(--dx-info-content);
+  --color-success: var(--dx-success);
+  --color-success-content: var(--dx-success-content);
+  --color-warning: var(--dx-warning);
+  --color-warning-content: var(--dx-warning-content);
+  --color-error: var(--dx-error);
+  --color-error-content: var(--dx-error-content);
 }

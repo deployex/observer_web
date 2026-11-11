@@ -7,10 +7,11 @@ defmodule Observer.Web.Tracing.Page do
 
   use Observer.Web, :live_component
 
-  alias Observer.Web.Components.Attention
   alias Observer.Web.Components.CopyToClipboard
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Icons
   alias Observer.Web.Components.MultiSelectList
+  alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias Observer.Web.Resolver
   alias Observer.Web.Tracing.Selection
@@ -45,7 +46,7 @@ defmodule Observer.Web.Tracing.Page do
     match_spec_info = ~H"""
     <a
       href="https://www.erlang.org/docs/24/apps/erts/match_spec"
-      class="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline"
+      class="font-medium text-primary underline hover:no-underline"
     >
       (more_info)
     </a>
@@ -59,7 +60,7 @@ defmodule Observer.Web.Tracing.Page do
     to ensure the debugger doesn't remain active unintentionally. Check out the
     <a
       href="https://www.erlang.org/docs/24/man/dbg"
-      class="font-medium text-blue-600 underline dark:text-blue-500 hover:no-underline"
+      class="font-medium text-primary underline hover:no-underline"
     >
       Erlang Debugger
     </a>
@@ -80,70 +81,11 @@ defmodule Observer.Web.Tracing.Page do
       |> assign(attention_msg: attention_msg)
 
     ~H"""
-    <div class="min-h-screen bg-white dark:bg-gray-800">
-      <Attention.content
-        id="tracing"
-        title="Attention"
-        class="border-red-400 dark:border-red-700 text-red-500 dark:text-red-200"
-        message={@attention_msg}
-      >
-        <:inner_form>
-          <.form
-            for={@form}
-            id="tracing-update-form"
-            class="flex flex-col md:flex-row md:items-end shrink-0 ml-2 mr-2 py-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-x-5 gap-y-1"
-            phx-change="form-update"
-          >
-            <Core.input
-              field={@form[:max_messages]}
-              type="number"
-              step="1"
-              min="1"
-              max="50"
-              label="Messages"
-            />
-
-            <Core.input
-              field={@form[:session_timeout_seconds]}
-              type="number"
-              step="15"
-              min="30"
-              max="300"
-              label="Timeout(s)"
-            />
-          </.form>
-        </:inner_form>
-        <:inner_button>
-          <button
-            :if={@trace_idle? and @trace_owner?}
-            id="tracing-multi-select-run"
-            phx-click="tracing-apps-run"
-            disabled={not Resolver.can?(:start_trace, @access)}
-            class={
-              "phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80 " <>
-                Core.gated_classes()
-            }
-          >
-            RUN
-          </button>
-          <button
-            :if={@trace_idle? == false and @trace_owner?}
-            id="tracing-multi-select-stop"
-            phx-click="tracing-apps-stop"
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 dark:bg-red-700 transform active:scale-75 transition-transform hover:bg-red-600 dark:hover:bg-red-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80 animate-pulse"
-          >
-            STOP
-          </button>
-
-          <button
-            :if={not @trace_owner?}
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-red-500 dark:bg-red-700 transform active:scale-75 transition-transform hover:bg-red-600 dark:hover:bg-red-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80 animate-pulse"
-          >
-            IN USE
-          </button>
-        </:inner_button>
-      </Attention.content>
-      <div class="flex">
+    <div class="min-h-screen bg-base-100">
+      <div class="px-2 py-1.5 text-xs text-error border-b border-base-300">
+        {@attention_msg}
+      </div>
+      <Toolbar.content>
         <MultiSelectList.content
           id="tracing-multi-select"
           selected_text="Selected Items"
@@ -162,21 +104,118 @@ defmodule Observer.Web.Tracing.Page do
           show_options={@show_tracing_options}
           form_search={@form_search}
         />
-      </div>
+
+        <div
+          id="tracing-settings-wrap"
+          class="relative inline-flex shrink-0"
+          phx-click-away={JS.hide(to: "#tracing-settings-panel")}
+          phx-window-keydown={JS.hide(to: "#tracing-settings-panel")}
+          phx-key="escape"
+        >
+          <button
+            type="button"
+            id="tracing-settings-toggle"
+            title="Tracing settings"
+            aria-label="Tracing settings"
+            phx-click={
+              JS.toggle(
+                to: "#tracing-settings-panel",
+                in: "ease-in duration-150",
+                out: "ease-out duration-100"
+              )
+            }
+            class="inline-flex items-center gap-x-1 text-xs font-semibold text-muted hover:text-base-content border border-base-300 rounded px-2 py-1"
+          >
+            Settings <Icons.chevron_down class="w-3 h-3" />
+          </button>
+          <div
+            id="tracing-settings-panel"
+            class="hidden absolute left-full top-0 ml-2 z-40 w-56 rounded-md shadow-lg bg-base-100 border border-base-300 p-3"
+          >
+            <.form
+              for={@form}
+              id="tracing-update-form"
+              class="flex flex-col gap-y-2 text-xs text-left text-base-content"
+              phx-change="form-update"
+            >
+              <Core.input
+                field={@form[:max_messages]}
+                type="number"
+                step="1"
+                min="1"
+                max="50"
+                label="Messages"
+              />
+
+              <Core.input
+                field={@form[:session_timeout_seconds]}
+                type="number"
+                step="15"
+                min="30"
+                max="300"
+                label="Timeout(s)"
+              />
+            </.form>
+          </div>
+        </div>
+
+        <button
+          :if={@trace_idle? and @trace_owner?}
+          id="tracing-multi-select-run"
+          phx-click="tracing-apps-run"
+          disabled={not Resolver.can?(:start_trace, @access)}
+          class={
+            "phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75 " <>
+              Core.gated_classes()
+          }
+        >
+          RUN
+        </button>
+        <div
+          :if={@trace_idle? == false and @trace_owner?}
+          class="ml-auto flex items-center gap-x-3 text-xs text-muted"
+        >
+          <span>{@trace_message_count}/{@trace_max_messages} msgs</span>
+          <span>
+            <span
+              id="tracing-countdown"
+              phx-hook="Countdown"
+              data-expires={@trace_expires_at}
+              class="font-mono text-base-content"
+            ></span>
+            left
+          </span>
+        </div>
+        <button
+          :if={@trace_idle? == false and @trace_owner?}
+          id="tracing-multi-select-stop"
+          phx-click="tracing-apps-stop"
+          class="phx-submit-loading:opacity-75 rounded-xl bg-error transform active:scale-75 transition-transform hover:opacity-90 px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-error-content active:opacity-75 animate-pulse"
+        >
+          STOP
+        </button>
+
+        <button
+          :if={not @trace_owner?}
+          class="phx-submit-loading:opacity-75 rounded-xl bg-error transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-error-content active:opacity-75 animate-pulse"
+        >
+          IN USE
+        </button>
+      </Toolbar.content>
       <div class="p-2">
         <div
           :if={not @trace_messages? and @trace_idle?}
-          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+          class="p-4 text-sm text-muted"
         >
           Select functions to trace and press RUN to stream calls live.
         </div>
         <div
           :if={not @trace_messages? and not @trace_idle?}
-          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+          class="p-4 text-sm text-muted"
         >
           Waiting for trace messages...
         </div>
-        <div :if={@trace_messages?} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
+        <div :if={@trace_messages?} class="bg-base-100 w-full shadow-lg rounded">
           <Core.table_tracing id="live-logs" rows={@streams.tracing_messages}>
             <:col :let={{_id, tracing_message}} label="SERVICE">
               <span>{tracing_message.service}</span>
@@ -221,6 +260,9 @@ defmodule Observer.Web.Tracing.Page do
     |> assign(:node_data, %{})
     |> assign(:trace_session_id, nil)
     |> assign(:trace_messages?, false)
+    |> assign(:trace_message_count, 0)
+    |> assign(:trace_max_messages, nil)
+    |> assign(:trace_expires_at, nil)
     |> assign(:show_tracing_options, false)
     |> assign(:form, to_form(default_form_options()))
     |> assign(:form_search, to_form(default_form_search_options()))
@@ -233,6 +275,9 @@ defmodule Observer.Web.Tracing.Page do
     |> assign(:node_data, %{})
     |> assign(:trace_session_id, nil)
     |> assign(:trace_messages?, false)
+    |> assign(:trace_message_count, 0)
+    |> assign(:trace_max_messages, nil)
+    |> assign(:trace_expires_at, nil)
     |> assign(:show_tracing_options, false)
     |> assign(form: to_form(default_form_options()))
     |> assign(form_search: to_form(default_form_search_options()))
@@ -254,6 +299,10 @@ defmodule Observer.Web.Tracing.Page do
     show_tracing_options = !socket.assigns.show_tracing_options
 
     {:noreply, socket |> assign(:show_tracing_options, show_tracing_options)}
+  end
+
+  def handle_parent_event("close-options", _value, socket) do
+    {:noreply, assign(socket, :show_tracing_options, false)}
   end
 
   def handle_parent_event(
@@ -308,15 +357,26 @@ defmodule Observer.Web.Tracing.Page do
       functions_to_monitor =
         Selection.build_functions_to_monitor(node_info, node_info.selected_match_spec_keys)
 
+      max_messages = String.to_integer(form.params["max_messages"])
+      session_timeout_ms = String.to_integer(form.params["session_timeout_seconds"]) * 1_000
+
       case Tracer.start_trace(functions_to_monitor, %{
-             max_messages: String.to_integer(form.params["max_messages"]),
-             session_timeout_ms: String.to_integer(form.params["session_timeout_seconds"]) * 1_000
+             max_messages: max_messages,
+             session_timeout_ms: session_timeout_ms
            }) do
         {:ok, %{session_id: session_id}} ->
           {:noreply,
            socket
            |> assign(:trace_session_id, session_id)
            |> assign(:trace_messages?, false)
+           |> assign(:trace_message_count, 0)
+           |> assign(:trace_max_messages, max_messages)
+           |> assign(
+             :trace_expires_at,
+             DateTime.utc_now()
+             |> DateTime.add(session_timeout_ms, :millisecond)
+             |> DateTime.to_iso8601()
+           )
            |> stream(:tracing_messages, [], reset: true)}
 
         # coveralls-ignore-start
@@ -496,6 +556,7 @@ defmodule Observer.Web.Tracing.Page do
     {:noreply,
      socket
      |> assign(:trace_messages?, true)
+     |> assign(:trace_message_count, socket.assigns.trace_message_count + 1)
      |> stream(:tracing_messages, [data])}
   end
 

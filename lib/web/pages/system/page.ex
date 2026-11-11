@@ -10,56 +10,48 @@ defmodule Observer.Web.System.Page do
 
   use Observer.Web, :live_component
 
-  alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.SystemInfo
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-white dark:bg-gray-800">
-      <Attention.content
-        id="system"
-        title="Attention"
-        class="border-red-400 dark:border-red-700 text-red-500 dark:text-red-200"
-        message={attention_msg()}
-      >
-        <:inner_form>
-          <.form
-            for={@form}
-            id="system-update-form"
-            class="flex flex-col md:flex-row md:items-end shrink-0 ml-2 mr-2 py-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-x-5 gap-y-1"
-            phx-change="form-update"
-          >
-            <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
-            <Core.input
-              field={@form[:refresh_seconds]}
-              type="select"
-              label="Refresh"
-              options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
-            />
-          </.form>
-        </:inner_form>
-        <:inner_button>
-          <button
-            id="system-refresh"
-            phx-click="system-refresh"
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80"
-          >
-            REFRESH
-          </button>
-        </:inner_button>
-      </Attention.content>
+    <div class="min-h-screen bg-base-100">
+      <Toolbar.content>
+        <.form
+          for={@form}
+          id="system-update-form"
+          class="flex flex-col md:flex-row md:items-end shrink-0 text-xs text-center text-base-content whitespace-nowrap gap-x-5 gap-y-1"
+          phx-change="form-update"
+        >
+          <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
+          <Core.input
+            field={@form[:refresh_seconds]}
+            type="select"
+            label="Refresh"
+            options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
+          />
+        </.form>
+
+        <button
+          id="system-refresh"
+          phx-click="system-refresh"
+          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+        >
+          REFRESH
+        </button>
+      </Toolbar.content>
 
       <div class="p-2">
-        <div :if={@snapshot_error} class="p-4 text-sm text-red-500 dark:text-red-300">
+        <div :if={@snapshot_error} class="p-4 text-sm text-error">
           Could not read {@form.params["service"]}: {inspect(@snapshot_error)}
         </div>
 
         <div
           :if={@node_info == nil and @snapshot_error == nil}
-          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+          class="p-4 text-sm text-muted"
         >
           Collecting system information...
         </div>
@@ -75,14 +67,14 @@ defmodule Observer.Web.System.Page do
                 {"Uptime", format_uptime(@node_info.uptime_ms)}
               ]
             }
-            class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700"
+            class="px-2 py-1 rounded-full bg-info/10 border border-info text-info"
           >
             {label}: {value}
           </span>
         </div>
 
-        <div :if={@limits != []} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div :if={@limits != []} class="bg-base-100 w-full shadow-lg rounded mb-4">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
             Limits
           </h2>
           <Core.table_tracing id="system-limits" rows={@limits}>
@@ -91,7 +83,7 @@ defmodule Observer.Web.System.Page do
             <:col :let={limit} label="LIMIT">{limit.limit}</:col>
             <:col :let={limit} label="USED">
               <div class="flex items-center gap-2">
-                <div class="w-40 h-2 rounded bg-gray-200 dark:bg-gray-600 overflow-hidden">
+                <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
                   <div
                     class={["h-2 rounded", usage_color(limit.percent)]}
                     style={"width: #{min(limit.percent, 100)}%"}
@@ -105,7 +97,7 @@ defmodule Observer.Web.System.Page do
 
         <div
           :if={@os_data == :os_mon_not_started}
-          class="p-4 mb-4 text-sm text-gray-500 dark:text-gray-400"
+          class="p-4 mb-4 text-sm text-muted"
         >
           Operating system data (load averages, CPU, OS memory and disks) requires the
           <span class="font-mono font-semibold">:os_mon</span>
@@ -115,15 +107,15 @@ defmodule Observer.Web.System.Page do
           to enable it.
         </div>
 
-        <div :if={is_map(@os_data)} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div :if={is_map(@os_data)} class="bg-base-100 w-full shadow-lg rounded mb-4">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
             Operating System
           </h2>
 
           <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
             <span
               :if={@os_data.os}
-              class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700"
+              class="px-2 py-1 rounded-full bg-info/10 border border-info text-info"
             >
               OS: {@os_data.os}
             </span>
@@ -139,16 +131,16 @@ defmodule Observer.Web.System.Page do
                     else: []
                   )
               }
-              class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700"
+              class="px-2 py-1 rounded-full bg-info/10 border border-info text-info"
             >
               {label}: {value}
             </span>
           </div>
 
-          <div :if={@os_data.memory} class="px-4 pb-2 text-xs text-gray-700 dark:text-gray-200">
+          <div :if={@os_data.memory} class="px-4 pb-2 text-xs text-base-content">
             <div class="flex items-center gap-2">
               <span class="font-semibold">OS Memory</span>
-              <div class="w-40 h-2 rounded bg-gray-200 dark:bg-gray-600 overflow-hidden">
+              <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
                 <div
                   class={["h-2 rounded", usage_color(@os_data.memory.used_percent)]}
                   style={"width: #{min(@os_data.memory.used_percent, 100)}%"}
@@ -166,7 +158,7 @@ defmodule Observer.Web.System.Page do
             <:col :let={cpu} label="CPU">{cpu.id}</:col>
             <:col :let={cpu} label="UTILIZATION">
               <div class="flex items-center gap-2">
-                <div class="w-40 h-2 rounded bg-gray-200 dark:bg-gray-600 overflow-hidden">
+                <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
                   <div
                     class={["h-2 rounded", usage_color(cpu.busy_percent)]}
                     style={"width: #{min(cpu.busy_percent, 100)}%"}
@@ -182,7 +174,7 @@ defmodule Observer.Web.System.Page do
             <:col :let={disk} label="SIZE">{format_bytes(disk.total_kbytes * 1_024)}</:col>
             <:col :let={disk} label="USED">
               <div class="flex items-center gap-2">
-                <div class="w-40 h-2 rounded bg-gray-200 dark:bg-gray-600 overflow-hidden">
+                <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
                   <div
                     class={["h-2 rounded", usage_color(disk.capacity_percent)]}
                     style={"width: #{min(disk.capacity_percent, 100)}%"}
@@ -194,8 +186,8 @@ defmodule Observer.Web.System.Page do
           </Core.table_tracing>
         </div>
 
-        <div :if={@allocators != []} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div :if={@allocators != []} class="bg-base-100 w-full shadow-lg rounded">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
             Memory Allocators
           </h2>
           <Core.table_tracing id="system-allocators" rows={@allocators}>
@@ -348,21 +340,9 @@ defmodule Observer.Web.System.Page do
     |> Enum.find(Node.self(), &(to_string(&1) == service))
   end
 
-  defp attention_msg do
-    assigns = %{}
-
-    ~H"""
-    A read-only snapshot of the selected service: runtime information, resource usage against the
-    VM limits, memory allocator carrier utilization (low utilization on a busy allocator is a
-    sign of fragmentation) and operating system data when :os_mon is running. The snapshot
-    refreshes automatically at the selected interval - press REFRESH to update immediately, or
-    pause the interval.
-    """
-  end
-
-  defp usage_color(percent) when percent >= 90, do: "bg-red-500"
-  defp usage_color(percent) when percent >= 70, do: "bg-yellow-500"
-  defp usage_color(_percent), do: "bg-green-500"
+  defp usage_color(percent) when percent >= 90, do: "bg-error"
+  defp usage_color(percent) when percent >= 70, do: "bg-warning"
+  defp usage_color(_percent), do: "bg-success"
 
   defp format_uptime(ms) do
     seconds = div(ms, 1_000)

@@ -1,14 +1,13 @@
 defmodule Observer.Web.Components.MultiSelectList do
   @moduledoc """
-  Multi select list box
-
-  References:
-   * https://www.creative-tim.com/twcomponents/component/multi-select
-
+  Multi select list box, with a per-group search filter - the Tracing/Profiling pages' version of
+  `Observer.Web.Components.MultiSelect`, kept as a separate component because it supports up to
+  four groups, each with its own search box and an optional extra info label.
   """
   use Phoenix.Component
 
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Icons
   alias Observer.Web.Helpers
   alias Phoenix.LiveView.JS
 
@@ -36,205 +35,107 @@ defmodule Observer.Web.Components.MultiSelectList do
         end
       end)
 
+    panel_id = "#{assigns.id}-panel"
+
+    close = JS.hide(to: "##{panel_id}") |> JS.push("close-options")
+
+    toggle =
+      JS.toggle(to: "##{panel_id}", in: "ease-in duration-150", out: "ease-out duration-100")
+      |> JS.push("toggle-options")
+
     assigns =
       assigns
       |> assign(elements_to_filter: elements_to_filter)
       |> assign(unselected: filtered_unselected)
+      |> assign(panel_id: panel_id, close: close, toggle: toggle)
 
     ~H"""
-    <div class="w-full m flex flex-col items-center mx-auto">
-      <div class="w-full px-2">
-        <div class="flex flex-col items-center relative">
-          <div class="w-full  ">
-            <div class="my-2 p-1 flex border border-gray-300 bg-white dark:bg-gray-900 rounded">
-              <div class="flex flex-auto p-0.5 flex-wrap">
-                <div class="flex text-ms font-normal items-center p-2 py-1 bg-gray-200 dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-600">
-                  {@selected_text}
-                </div>
+    <div
+      id={@id}
+      class="relative inline-flex shrink-0"
+      phx-click-away={@close}
+      phx-window-keydown={@close}
+      phx-key="escape"
+    >
+      <div class="flex flex-wrap items-center gap-1 px-2 py-1 border border-base-300 rounded-md bg-base-200 text-xs">
+        <span class="text-muted shrink-0">{@selected_text}</span>
 
-                <%= for item <- @selected do %>
-                  <%= for key <- item.keys do %>
-                    <div class={[
-                      "flex justify-center items-center m-1 font-medium py-1 px-2 rounded-full border",
-                      border_item_color(item.name),
-                      bg_item_color(item.name)
-                    ]}>
-                      <div class={[
-                        "text-sm font-normal leading-none max-w-full flex-initial",
-                        text_item_color(item.name)
-                      ]}>
-                        {"#{item.name}:#{key}"}
-                      </div>
-                      <button
-                        id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-remove-item")}
-                        class="flex flex-auto flex-row-reverse"
-                        phx-click="multi-select-remove-item"
-                        phx-value-key={key}
-                        phx-value-item={item.name}
-                      >
-                        <div>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="100%"
-                            height="100%"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="feather feather-x text-gray-900 dark:text-black cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
-                          >
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                        </div>
-                      </button>
-                    </div>
-                  <% end %>
-                <% end %>
-                <div class="flex-1">
-                  <input
-                    placeholder=""
-                    phx-click="toggle-options"
-                    class="p-0.5 bg-transparent border border-white dark:border-black p-1 px-2 appearance-none outline-none h-full w-full text-gray-800 focus:border-teal-500 dark:focus:border-teal-300"
-                  />
-                </div>
-              </div>
-              <div class="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200 ">
-                <button
-                  id={"#{@id}-toggle-options"}
-                  class="cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none"
-                  phx-click="toggle-options"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="100%"
-                    height="100%"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="feather text-gray-900 dark:text-white feather-chevron-up w-4 h-4"
-                  >
-                    <polyline :if={!@show_options} points="18 15 12 9 6 15"></polyline>
-                    <polyline :if={@show_options} points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-              </div>
+        <%= for item <- @selected do %>
+          <%= for key <- item.keys do %>
+            <span class="inline-flex items-center gap-x-1 pl-1.5 pr-1 py-0.5 rounded border border-base-300 bg-base-100 text-base-content">
+              {"#{item.name}:#{key}"}
+              <button
+                id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-remove-item")}
+                type="button"
+                phx-click="multi-select-remove-item"
+                phx-value-key={key}
+                phx-value-item={item.name}
+                class="text-muted hover:text-base-content"
+              >
+                <Icons.x_mark class="w-3 h-3" />
+              </button>
+            </span>
+          <% end %>
+        <% end %>
+
+        <button
+          type="button"
+          id={"#{@id}-toggle-options"}
+          phx-click={@toggle}
+          class="ml-auto inline-flex items-center text-muted hover:text-base-content"
+        >
+          <%= if @show_options do %>
+            <Icons.chevron_up class="w-3.5 h-3.5" />
+          <% else %>
+            <Icons.chevron_down class="w-3.5 h-3.5" />
+          <% end %>
+        </button>
+      </div>
+
+      <div
+        id={@panel_id}
+        class={[
+          "absolute left-0 top-full mt-1 z-40 flex gap-2 p-2 rounded-md border border-base-300 bg-base-100 shadow-lg max-w-[90vw] overflow-x-auto",
+          !@show_options && "hidden"
+        ]}
+      >
+        <div
+          :for={item <- @unselected}
+          class="w-72 shrink-0 max-h-72 overflow-y-scroll rounded border border-base-300"
+        >
+          <div class="sticky top-0 z-10 bg-base-100 border-b border-base-200 p-1.5">
+            <div class="text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
+              {item.name}{if item[:info], do: item.info}
             </div>
-
-            <div
-              :if={@show_options}
-              class="relative shadow bg-white dark:bg-gray-800 z-40 lef-0 rounded max-h-select"
+            <.form
+              :if={item.name in @elements_to_filter}
+              for={@form_search}
+              id={"multi-select-list-search-form-#{@id}-#{item.name}"}
+              phx-change="form-multi-select-list-update-search"
             >
-              <div phx-mounted={
-                JS.transition(
-                  {"first:ease-in duration-300", "first:opacity-0 first:p-0 first:h-0",
-                   "first:opacity-100"},
-                  time: 300
-                )
-              }>
-                <div class={["grid mt-1 gap-1 items-top", grid_cols(length(@unselected))]}>
-                  <%= for item <- @unselected do %>
-                    <div class="rounded-lg bg-white dark:bg-gray-600 border border-solid border-blueGray-100 block overflow-y-auto max-h-[300px]">
-                      <div class="flex items-start items-center bg-white dark:bg-gray-600 p-2 sticky top-0 z-10">
-                        <.form
-                          for={@form_search}
-                          id={"multi-select-list-search-form-#{@id}-#{item.name}"}
-                          phx-change="form-multi-select-list-update-search"
-                          class="flex"
-                        >
-                          <%= if item[:info] do %>
-                            <div class=" text-sm font-bold text-black dark:text-white">{item.name}
-                              {item.info}:</div>
-                          <% else %>
-                            <div class=" text-sm font-bold text-black dark:text-white">
-                              {item.name}:
-                            </div>
-                          <% end %>
-                          <%= if item.name in @elements_to_filter do %>
-                            <Core.input
-                              field={@form_search[item.name]}
-                              type="text-custom-search"
-                              placeholder="search..."
-                            />
-                          <% end %>
-                        </.form>
-                      </div>
-
-                      <%= for key <- item.keys do %>
-                        <button
-                          id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-add-item")}
-                          class="flex justify-center items-center m-1 font-medium  px-2 rounded-full text-gray-700 dark:text-white bg-gray-100 dark:bg-gray-600 border border-gray-300"
-                          phx-click="multi-select-add-item"
-                          phx-value-key={key}
-                          phx-value-item={item.name}
-                        >
-                          <div class="text-sm font-normal leading-none max-w-full flex-initial">
-                            {key}
-                          </div>
-                          <div class="flex flex-auto flex-row-reverse">
-                            <div>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="100%"
-                                height="100%"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="feather feather-x text-gray-900 dark:text-white cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
-                              >
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </div>
-                          </div>
-                        </button>
-                      <% end %>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
-            </div>
+              <Core.input
+                field={@form_search[item.name]}
+                type="text-custom-search"
+                placeholder="search..."
+              />
+            </.form>
+          </div>
+          <div class="flex flex-wrap gap-1 p-1.5">
+            <button
+              :for={key <- item.keys}
+              id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-add-item")}
+              type="button"
+              phx-click="multi-select-add-item"
+              phx-value-key={key}
+              phx-value-item={item.name}
+              class="inline-flex items-center px-2 py-0.5 rounded-full border border-base-300 text-xs text-base-content hover:bg-base-200"
+            >
+              {key}
+            </button>
           </div>
         </div>
       </div>
     </div>
     """
   end
-
-  # One column per selection group: the Tracing page passes four (services, modules, functions,
-  # match_spec), the Profiling page three (no match-spec picker). Literal class names, not
-  # interpolation - Tailwind only generates classes it finds verbatim in the source.
-  defp grid_cols(3), do: "grid-cols-3"
-  defp grid_cols(_four), do: "grid-cols-4"
-
-  def border_item_color("services"), do: "border-teal-300"
-  def border_item_color("modules"), do: "border-red-500"
-  def border_item_color("functions"), do: "border-blue-400"
-  def border_item_color("match_spec"), do: "border-yellow-400"
-  # coveralls-ignore-start
-  def border_item_color(_), do: "border-gray-300"
-  # coveralls-ignore-stop
-
-  def bg_item_color("services"), do: "bg-teal-50"
-  def bg_item_color("modules"), do: "bg-red-50"
-  def bg_item_color("functions"), do: "bg-blue-50"
-  def bg_item_color("match_spec"), do: "bg-yellow-50"
-  # coveralls-ignore-start
-  def bg_item_color(_), do: "bg-gray-50"
-  # coveralls-ignore-stop
-
-  def text_item_color("services"), do: "text-teal-700"
-  def text_item_color("modules"), do: "text-red-500"
-  def text_item_color("functions"), do: "text-blue-400"
-  def text_item_color("match_spec"), do: "text-yellow-700"
-  # coveralls-ignore-start
-  def text_item_color(_), do: "text-teal-700"
-  # coveralls-ignore-stop
 end

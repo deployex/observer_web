@@ -13,8 +13,9 @@ defmodule Observer.Web.Crashdump.Page do
 
   use Observer.Web, :live_component
 
-  alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Icons
+  alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.Crashdump
 
@@ -23,47 +24,44 @@ defmodule Observer.Web.Crashdump.Page do
   @impl Phoenix.LiveComponent
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-white dark:bg-gray-800">
-      <Attention.content
-        id="crashdump"
-        title="Attention"
-        class="border-red-400 dark:border-red-700 text-red-500 dark:text-red-200"
-        message={attention_msg()}
-      >
-        <:inner_form>
-          <.form
-            for={@form}
-            id="crashdump-update-form"
-            class="flex flex-col md:flex-row md:items-end shrink-0 ml-2 mr-2 py-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-x-5 gap-y-1"
-            phx-change="form-update"
-          >
-            <Core.input
-              field={@form[:sort_by]}
-              type="select"
-              label="Sort by"
-              options={[
-                {"Memory", "memory"},
-                {"Reductions", "reds"},
-                {"Message Queue", "msg_q_len"}
-              ]}
-            />
+    <div class={[
+      "min-h-screen bg-base-100",
+      @details && @details_panel_collapsed && "pb-16",
+      @details && !@details_panel_collapsed && !@details_panel_expanded && "pb-[70vh]",
+      @details && !@details_panel_collapsed && @details_panel_expanded && "pb-[92vh]"
+    ]}>
+      <Toolbar.content>
+        <.form
+          for={@form}
+          id="crashdump-update-form"
+          class="flex flex-col md:flex-row md:items-end shrink-0 text-xs text-center text-base-content whitespace-nowrap gap-x-5 gap-y-1"
+          phx-change="form-update"
+        >
+          <Core.input
+            field={@form[:sort_by]}
+            type="select"
+            label="Sort by"
+            options={[
+              {"Memory", "memory"},
+              {"Reductions", "reds"},
+              {"Message Queue", "msg_q_len"}
+            ]}
+          />
 
-            <Core.input field={@form[:search]} type="text" label="Search" phx-debounce="300" />
-          </.form>
-        </:inner_form>
-        <:inner_button>
-          <button
-            id="crashdump-refresh"
-            phx-click="crashdump-refresh"
-            class="phx-submit-loading:opacity-75 lg:rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80"
-          >
-            REFRESH
-          </button>
-        </:inner_button>
-      </Attention.content>
+          <Core.input field={@form[:search]} type="text" label="Search" phx-debounce="300" />
+        </.form>
+
+        <button
+          id="crashdump-refresh"
+          phx-click="crashdump-refresh"
+          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+        >
+          REFRESH
+        </button>
+      </Toolbar.content>
 
       <div class="p-2">
-        <div :if={not @available?} class="p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div :if={not @available?} class="p-4 text-sm text-muted">
           The <code class="font-mono">:observer</code>
           application is not available on this node, so crash dumps cannot be parsed. Add
           <code class="font-mono">:observer</code>
@@ -72,8 +70,8 @@ defmodule Observer.Web.Crashdump.Page do
           has no application callback and starts no processes (and never any GUI).
         </div>
 
-        <div :if={@available?} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div :if={@available?} class="bg-base-100 w-full shadow-lg rounded mb-4">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
             Upload a crash dump
           </h2>
           <form
@@ -84,14 +82,14 @@ defmodule Observer.Web.Crashdump.Page do
           >
             <label
               phx-drop-target={@uploads.dump.ref}
-              class="flex flex-col items-center justify-center py-6 text-center border border-dashed border-gray-300 dark:border-gray-600 rounded cursor-pointer text-sm text-gray-600 dark:text-gray-300 hover:border-blue-400"
+              class="flex flex-col items-center justify-center py-6 text-center border border-dashed border-base-300 rounded cursor-pointer text-sm text-base-content hover:border-primary"
             >
               <span>Drag an <code class="font-mono">erl_crash.dump</code> here, or click to choose</span>
               <.live_file_input upload={@uploads.dump} class="sr-only" />
             </label>
 
             <div :for={entry <- @uploads.dump.entries} class="mt-3 flex items-center gap-3">
-              <span class="text-xs text-gray-700 dark:text-gray-200 truncate">
+              <span class="text-xs text-base-content truncate">
                 {entry.client_name} ({format_bytes(entry.client_size)})
               </span>
               <progress value={entry.progress} max="100" class="flex-1" />
@@ -99,19 +97,19 @@ defmodule Observer.Web.Crashdump.Page do
                 type="button"
                 phx-click="crashdump-cancel-upload"
                 phx-value-ref={entry.ref}
-                class="text-xs font-semibold text-gray-500 hover:underline"
+                class="text-xs font-semibold text-muted border border-base-300 rounded px-2.5 py-1 hover:bg-base-200 hover:text-base-content transition-colors"
               >
                 CANCEL
               </button>
               <button
                 type="submit"
-                class="text-xs font-semibold text-blue-600 dark:text-blue-300 hover:underline"
+                class="text-xs font-semibold text-primary border border-primary rounded px-2.5 py-1 hover:bg-primary hover:text-primary-content transition-colors"
               >
                 LOAD
               </button>
             </div>
 
-            <p :for={err <- upload_errors(@uploads.dump)} class="mt-2 text-xs text-red-500">
+            <p :for={err <- upload_errors(@uploads.dump)} class="mt-2 text-xs text-error">
               {upload_error_to_string(err)}
             </p>
           </form>
@@ -119,9 +117,9 @@ defmodule Observer.Web.Crashdump.Page do
 
         <div
           :if={@available? and match?({:ok, _}, @dumps) and elem(@dumps, 1) != []}
-          class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4"
+          class="bg-base-100 w-full shadow-lg rounded mb-4"
         >
-          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
             Crash Dumps on this host
           </h2>
           <Core.table_tracing id="crashdump-files" rows={Enum.with_index(elem(@dumps, 1))}>
@@ -134,7 +132,7 @@ defmodule Observer.Web.Crashdump.Page do
                 id={"crashdump-load-#{index}"}
                 phx-click="crashdump-load"
                 phx-value-index={index}
-                class="text-xs font-semibold text-blue-600 dark:text-blue-300 hover:underline"
+                class="text-xs font-semibold text-primary border border-primary rounded px-2.5 py-1 hover:bg-primary hover:text-primary-content transition-colors"
               >
                 LOAD
               </button>
@@ -144,27 +142,27 @@ defmodule Observer.Web.Crashdump.Page do
 
         <div
           :if={match?({:loading, _, _}, @load_status)}
-          class="p-4 bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4"
+          class="p-4 bg-base-100 w-full shadow-lg rounded mb-4"
         >
           <% {:loading, path, percent} = @load_status %>
-          <div class="text-sm text-gray-700 dark:text-gray-200 pb-2">
+          <div class="text-sm text-base-content pb-2">
             Parsing {Path.basename(path)}... {percent}%
           </div>
-          <div class="w-full h-2 rounded bg-gray-200 dark:bg-gray-600 overflow-hidden">
-            <div class="h-2 rounded bg-blue-500" style={"width: #{percent}%"} />
+          <div class="w-full h-2 rounded bg-base-300 overflow-hidden">
+            <div class="h-2 rounded bg-primary" style={"width: #{percent}%"} />
           </div>
         </div>
 
-        <div :if={@load_error} class="p-4 text-sm text-red-500 dark:text-red-300">
+        <div :if={@load_error} class="p-4 text-sm text-error">
           Could not load the dump: {inspect(@load_error)}
         </div>
 
-        <div :if={@general_info} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div :if={@general_info} class="bg-base-100 w-full shadow-lg rounded mb-4">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
             {Path.basename(loaded_path(@load_status))}
           </h2>
           <div class="px-4 py-2">
-            <div class="text-sm font-semibold text-red-600 dark:text-red-300 break-all">
+            <div class="text-sm font-semibold text-error break-all">
               Slogan: {@general_info[:slogan]}
             </div>
           </div>
@@ -183,17 +181,17 @@ defmodule Observer.Web.Crashdump.Page do
                 ]
               }
               :if={@general_info[key]}
-              class="px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-700 border border-gray-300 text-gray-700 dark:text-gray-200"
+              class="px-2 py-1 rounded-full bg-base-200 border border-base-300 text-base-content"
             >
               {label}: {@general_info[key]}
             </span>
           </div>
         </div>
 
-        <div :if={@rows != nil} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div :if={@rows != nil} class="bg-base-100 w-full shadow-lg rounded">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
             Processes at crash time
-            <span :if={length(@rows) == @displayed_rows} class="font-normal text-gray-500">
+            <span :if={length(@rows) == @displayed_rows} class="font-normal text-muted">
               (showing the top {@displayed_rows})
             </span>
           </h2>
@@ -210,7 +208,7 @@ defmodule Observer.Web.Crashdump.Page do
                 id={"crashdump-select-row-#{index}"}
                 phx-click="crashdump-select-row"
                 phx-value-index={index}
-                class="text-xs font-semibold text-blue-600 dark:text-blue-300 hover:underline"
+                class="text-xs font-semibold text-primary border border-primary rounded px-2.5 py-1 hover:bg-primary hover:text-primary-content transition-colors"
               >
                 DETAILS
               </button>
@@ -220,32 +218,84 @@ defmodule Observer.Web.Crashdump.Page do
 
         <div
           :if={@details}
-          class="mt-4 bg-white dark:bg-gray-800 w-full shadow-lg rounded border border-gray-200 dark:border-gray-600"
+          id="crashdump-details-panel"
+          phx-mounted={
+            JS.transition(
+              {"transition-transform duration-300 ease-out", "translate-y-full", "translate-y-0"}
+            )
+          }
+          class={[
+            "fixed inset-x-0 bottom-0 z-30 flex flex-col bg-base-100 border-t border-base-300 shadow-2xl",
+            @details_panel_expanded && "max-h-[92vh]",
+            !@details_panel_expanded && "max-h-[70vh]"
+          ]}
         >
-          <div class="flex items-center justify-between px-4 pt-2">
-            <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-base-300 shrink-0">
+            <h2 class="text-sm font-semibold text-base-content">
               Process {@details[:pid]} {@details[:name]}
             </h2>
-            <button
-              id="crashdump-details-close"
-              phx-click="crashdump-details-close"
-              class="text-xs font-semibold text-gray-500 dark:text-gray-300 hover:underline"
-            >
-              CLOSE
-            </button>
+            <div class="flex items-center gap-x-3">
+              <button
+                :if={not @details_panel_collapsed}
+                id="crashdump-details-panel-expand"
+                type="button"
+                aria-label={
+                  if @details_panel_expanded, do: "Shrink details panel", else: "Expand details panel"
+                }
+                title={if @details_panel_expanded, do: "Shrink", else: "Expand"}
+                phx-click="crashdump-details-panel-expand"
+                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
+              >
+                <%= if @details_panel_expanded do %>
+                  <Icons.arrows_pointing_in class="w-5 h-5" />
+                <% else %>
+                  <Icons.arrows_pointing_out class="w-5 h-5" />
+                <% end %>
+              </button>
+              <button
+                id="crashdump-details-panel-collapse"
+                type="button"
+                aria-label={
+                  if @details_panel_collapsed,
+                    do: "Restore details panel",
+                    else: "Minimize details panel"
+                }
+                title={if @details_panel_collapsed, do: "Restore", else: "Minimize"}
+                phx-click="crashdump-details-panel-collapse"
+                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
+              >
+                <%= if @details_panel_collapsed do %>
+                  <Icons.chevron_up class="w-5 h-5" />
+                <% else %>
+                  <Icons.chevron_down class="w-5 h-5" />
+                <% end %>
+              </button>
+              <button
+                id="crashdump-details-close"
+                type="button"
+                aria-label="Close details panel"
+                title="Close"
+                phx-click="crashdump-details-close"
+                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
+              >
+                <Icons.x_mark class="w-5 h-5" />
+              </button>
+            </div>
           </div>
-          <table class="w-full text-left text-xs m-2">
-            <tbody>
-              <tr :for={{key, value} <- details_rows(@details)} class="align-top">
-                <td class="py-1 pr-4 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
-                  {key}
-                </td>
-                <td class="py-1 text-gray-600 dark:text-gray-300 whitespace-pre-wrap break-all">
-                  {value}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div :if={not @details_panel_collapsed} class="overflow-y-auto p-2">
+            <table class="w-full text-left text-xs m-2">
+              <tbody>
+                <tr :for={{key, value} <- details_rows(@details)} class="align-top">
+                  <td class="py-1 pr-4 font-semibold text-base-content whitespace-nowrap">
+                    {key}
+                  </td>
+                  <td class="py-1 text-base-content whitespace-pre-wrap break-all">
+                    {value}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -280,6 +330,8 @@ defmodule Observer.Web.Crashdump.Page do
     |> assign(:processes, nil)
     |> assign(:rows, nil)
     |> assign(:details, nil)
+    |> assign(:details_panel_collapsed, false)
+    |> assign(:details_panel_expanded, false)
     |> assign(:displayed_rows, @displayed_rows)
     |> assign(:form, to_form(%{"sort_by" => "memory", "search" => ""}))
   end
@@ -387,6 +439,14 @@ defmodule Observer.Web.Crashdump.Page do
     {:noreply, assign(socket, :details, nil)}
   end
 
+  def handle_parent_event("crashdump-details-panel-collapse", _params, socket) do
+    {:noreply, assign(socket, :details_panel_collapsed, !socket.assigns.details_panel_collapsed)}
+  end
+
+  def handle_parent_event("crashdump-details-panel-expand", _params, socket) do
+    {:noreply, assign(socket, :details_panel_expanded, !socket.assigns.details_panel_expanded)}
+  end
+
   @impl Page
   def handle_info({:crashdump_progress, {:loading, path, percent}}, socket) do
     {:noreply, assign(socket, :load_status, {:loading, path, percent})}
@@ -480,18 +540,6 @@ defmodule Observer.Web.Crashdump.Page do
       {int, ""} when int >= 0 -> int
       _invalid -> default
     end
-  end
-
-  defp attention_msg do
-    assigns = %{}
-
-    ~H"""
-    Inspect Erlang crash dumps: upload one from your machine (e.g. pulled off a crashed device)
-    or browse dumps present on the dashboard host, then read the crash slogan, the VM's state at
-    crash time and every dumped process including stacks and message queues. Parsing happens on
-    the dashboard node with OTP's own crashdump_viewer parser - nothing is fetched from remote
-    nodes.
-    """
   end
 
   defp upload_error_to_string(:too_large), do: "The file is larger than the allowed size."

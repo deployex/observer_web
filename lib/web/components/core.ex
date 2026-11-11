@@ -40,7 +40,7 @@ defmodule Observer.Web.Components.Core do
     <div class="px-4 sm:overflow-visible sm:px-0 ">
       <div id={"#{@id}-table"} class="block" phx-hook="ScrollBottom">
         <table class="items-center w-full border-collapse ">
-          <thead class="text-xs text-left align-middle leading-6 text-blueGray-500 uppercase sticky top-0 z-10">
+          <thead class="text-xs text-left align-middle leading-6 bg-base-200 text-muted uppercase sticky top-0 z-10">
             <tr>
               <th :for={col <- @col} class="p-1 pb-1 pr-6 font-semibold font-normal">
                 {col[:label]}
@@ -55,7 +55,7 @@ defmodule Observer.Web.Components.Core do
             <tr
               :for={row <- @rows}
               id={@row_id && @row_id.(row)}
-              class="group bg-white dark:bg-gray-800 "
+              class="group bg-base-100"
               phx-mounted={
                 @transition &&
                   JS.transition(
@@ -197,7 +197,7 @@ defmodule Observer.Web.Components.Core do
       end
 
     ~H"""
-    <div class="px-4 sm:overflow-visible sm:px-0 rounded bg-white dark:bg-gray-800 border border-solid border-blueGray-100">
+    <div class="px-4 sm:overflow-visible sm:px-0 rounded bg-base-100 border border-solid border-base-300">
       <div id={"#{@id}-table"} class="block max-h-[600px]">
         <table class="items-center w-full border-collapse">
           <div class={[
@@ -289,7 +289,7 @@ defmodule Observer.Web.Components.Core do
         phx-hook="ScrollBottom"
       >
         <table class="items-center w-full border-collapse">
-          <thead class="text-xs text-left align-middle leading-6 bg-white bg-blueGray-50 dark:bg-gray-800 text-blueGray-500 dark:text-blueGray-700 uppercase sticky top-0 z-10">
+          <thead class="text-xs text-left align-middle leading-6 bg-base-200 text-muted uppercase sticky top-0 z-10">
             <tr>
               <th :for={col <- @col} class="p-1 pb-1 pr-6 font-semibold font-normal">
                 {col[:label]}

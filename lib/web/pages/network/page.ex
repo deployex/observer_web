@@ -14,77 +14,75 @@ defmodule Observer.Web.Network.Page do
 
   use Observer.Web, :live_component
 
-  alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Icons
+  alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.Network
 
   @impl Phoenix.LiveComponent
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-white dark:bg-gray-800">
-      <Attention.content
-        id="network"
-        title="Attention"
-        class="border-red-400 dark:border-red-700 text-red-500 dark:text-red-200"
-        message={attention_msg()}
-      >
-        <:inner_form>
-          <.form
-            for={@form}
-            id="network-update-form"
-            class="flex flex-col md:flex-row md:items-end shrink-0 ml-2 mr-2 py-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-x-5 gap-y-1"
-            phx-change="form-update"
-          >
-            <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
+    <div class={[
+      "min-h-screen bg-base-100",
+      @details && @details_panel_collapsed && "pb-16",
+      @details && !@details_panel_collapsed && !@details_panel_expanded && "pb-[70vh]",
+      @details && !@details_panel_collapsed && @details_panel_expanded && "pb-[92vh]"
+    ]}>
+      <Toolbar.content>
+        <.form
+          for={@form}
+          id="network-update-form"
+          class="flex flex-col md:flex-row md:items-end shrink-0 text-xs text-center text-base-content whitespace-nowrap gap-x-5 gap-y-1"
+          phx-change="form-update"
+        >
+          <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
 
-            <Core.input
-              field={@form[:sort_by]}
-              type="select"
-              label="Sort by"
-              options={[
-                {"Recv (Δ)", "recv"},
-                {"Sent (Δ)", "send"},
-                {"Recv + Sent (Δ)", "total"}
-              ]}
-            />
+          <Core.input
+            field={@form[:sort_by]}
+            type="select"
+            label="Sort by"
+            options={[
+              {"Recv (Δ)", "recv"},
+              {"Sent (Δ)", "send"},
+              {"Recv + Sent (Δ)", "total"}
+            ]}
+          />
 
-            <Core.input
-              field={@form[:refresh_seconds]}
-              type="select"
-              label="Refresh"
-              options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
-            />
-          </.form>
-        </:inner_form>
-        <:inner_button>
-          <button
-            id="network-refresh"
-            phx-click="network-refresh"
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80"
-          >
-            REFRESH
-          </button>
-        </:inner_button>
-      </Attention.content>
+          <Core.input
+            field={@form[:refresh_seconds]}
+            type="select"
+            label="Refresh"
+            options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
+          />
+        </.form>
+
+        <button
+          id="network-refresh"
+          phx-click="network-refresh"
+          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+        >
+          REFRESH
+        </button>
+      </Toolbar.content>
 
       <div class="p-2">
-        <div :if={@sample_error} class="p-4 text-sm text-red-500 dark:text-red-300">
+        <div :if={@sample_error} class="p-4 text-sm text-error">
           Could not sample {@form.params["service"]}: {inspect(@sample_error)}
         </div>
 
         <div
           :if={@rows == nil and @sample_error == nil}
-          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+          class="p-4 text-sm text-muted"
         >
           Collecting network endpoints...
         </div>
 
-        <div :if={@rows != nil} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded mb-4">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div :if={@rows != nil} class="bg-base-100 w-full shadow-lg rounded mb-4">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
             Inet Ports
           </h2>
-          <div :if={@rows == []} class="p-4 text-xs text-gray-500 dark:text-gray-400">
+          <div :if={@rows == []} class="p-4 text-xs text-muted">
             No inet ports on this service.
           </div>
           <Core.table_tracing :if={@rows != []} id="network-results" rows={Enum.with_index(@rows)}>
@@ -103,7 +101,7 @@ defmodule Observer.Web.Network.Page do
                 id={"network-select-row-#{index}"}
                 phx-click="network-select-row"
                 phx-value-index={index}
-                class="text-xs font-semibold text-blue-600 dark:text-blue-300 hover:underline"
+                class="text-xs font-semibold text-primary border border-primary rounded px-2.5 py-1 hover:bg-primary hover:text-primary-content transition-colors"
               >
                 DETAILS
               </button>
@@ -111,11 +109,11 @@ defmodule Observer.Web.Network.Page do
           </Core.table_tracing>
         </div>
 
-        <div :if={@sockets != nil} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-gray-700 dark:text-gray-200">
+        <div :if={@sockets != nil} class="bg-base-100 w-full shadow-lg rounded">
+          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
             Sockets (NIF)
           </h2>
-          <div :if={@sockets == []} class="p-4 text-xs text-gray-500 dark:text-gray-400">
+          <div :if={@sockets == []} class="p-4 text-xs text-muted">
             No `socket` module sockets on this service.
           </div>
           <Core.table_tracing :if={@sockets != []} id="network-sockets" rows={@sockets}>
@@ -131,32 +129,84 @@ defmodule Observer.Web.Network.Page do
 
         <div
           :if={@details}
-          class="mt-4 bg-white dark:bg-gray-800 w-full shadow-lg rounded border border-gray-200 dark:border-gray-600"
+          id="network-details-panel"
+          phx-mounted={
+            JS.transition(
+              {"transition-transform duration-300 ease-out", "translate-y-full", "translate-y-0"}
+            )
+          }
+          class={[
+            "fixed inset-x-0 bottom-0 z-30 flex flex-col bg-base-100 border-t border-base-300 shadow-2xl",
+            @details_panel_expanded && "max-h-[92vh]",
+            !@details_panel_expanded && "max-h-[70vh]"
+          ]}
         >
-          <div class="flex items-center justify-between px-4 pt-2">
-            <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-base-300 shrink-0">
+            <h2 class="text-sm font-semibold text-base-content">
               Port {inspect(@details.port)} ({@details.local} → {@details.remote})
             </h2>
-            <button
-              id="network-details-close"
-              phx-click="network-details-close"
-              class="text-xs font-semibold text-gray-500 dark:text-gray-300 hover:underline"
-            >
-              CLOSE
-            </button>
+            <div class="flex items-center gap-x-3">
+              <button
+                :if={not @details_panel_collapsed}
+                id="network-details-panel-expand"
+                type="button"
+                aria-label={
+                  if @details_panel_expanded, do: "Shrink details panel", else: "Expand details panel"
+                }
+                title={if @details_panel_expanded, do: "Shrink", else: "Expand"}
+                phx-click="network-details-panel-expand"
+                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
+              >
+                <%= if @details_panel_expanded do %>
+                  <Icons.arrows_pointing_in class="w-5 h-5" />
+                <% else %>
+                  <Icons.arrows_pointing_out class="w-5 h-5" />
+                <% end %>
+              </button>
+              <button
+                id="network-details-panel-collapse"
+                type="button"
+                aria-label={
+                  if @details_panel_collapsed,
+                    do: "Restore details panel",
+                    else: "Minimize details panel"
+                }
+                title={if @details_panel_collapsed, do: "Restore", else: "Minimize"}
+                phx-click="network-details-panel-collapse"
+                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
+              >
+                <%= if @details_panel_collapsed do %>
+                  <Icons.chevron_up class="w-5 h-5" />
+                <% else %>
+                  <Icons.chevron_down class="w-5 h-5" />
+                <% end %>
+              </button>
+              <button
+                id="network-details-close"
+                type="button"
+                aria-label="Close details panel"
+                title="Close"
+                phx-click="network-details-close"
+                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
+              >
+                <Icons.x_mark class="w-5 h-5" />
+              </button>
+            </div>
           </div>
-          <table class="w-full text-left text-xs m-2">
-            <tbody>
-              <tr :for={{key, value} <- details_rows(@details)} class="align-top">
-                <td class="py-1 pr-4 font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
-                  {key}
-                </td>
-                <td class="py-1 text-gray-600 dark:text-gray-300 whitespace-pre-wrap break-all">
-                  {value}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div :if={not @details_panel_collapsed} class="overflow-y-auto p-2">
+            <table class="w-full text-left text-xs m-2">
+              <tbody>
+                <tr :for={{key, value} <- details_rows(@details)} class="align-top">
+                  <td class="py-1 pr-4 font-semibold text-base-content whitespace-nowrap">
+                    {key}
+                  </td>
+                  <td class="py-1 text-base-content whitespace-pre-wrap break-all">
+                    {value}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -187,6 +237,8 @@ defmodule Observer.Web.Network.Page do
     |> assign(:sockets, nil)
     |> assign(:previous_counters, %{})
     |> assign(:details, nil)
+    |> assign(:details_panel_collapsed, false)
+    |> assign(:details_panel_expanded, false)
     |> assign(:sample_error, nil)
     |> assign(:form, to_form(default_form_options()))
   end
@@ -234,6 +286,14 @@ defmodule Observer.Web.Network.Page do
 
   def handle_parent_event("network-details-close", _params, socket) do
     {:noreply, assign(socket, :details, nil)}
+  end
+
+  def handle_parent_event("network-details-panel-collapse", _params, socket) do
+    {:noreply, assign(socket, :details_panel_collapsed, !socket.assigns.details_panel_collapsed)}
+  end
+
+  def handle_parent_event("network-details-panel-expand", _params, socket) do
+    {:noreply, assign(socket, :details_panel_expanded, !socket.assigns.details_panel_expanded)}
   end
 
   defp restart_tick_chain(socket) do
@@ -348,17 +408,6 @@ defmodule Observer.Web.Network.Page do
       "sort_by" => "total",
       "refresh_seconds" => "5"
     }
-  end
-
-  defp attention_msg do
-    assigns = %{}
-
-    ~H"""
-    The busiest inet ports on the selected service, ranked by bytes received/sent per refresh
-    interval, with the local and remote endpoints and the owning process - plus the NIF-based
-    socket module sockets that port listings miss. Click DETAILS for a port's full statistics
-    and options.
-    """
   end
 
   defp format_bytes(bytes) when bytes >= 1_073_741_824,

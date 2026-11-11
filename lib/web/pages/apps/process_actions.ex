@@ -16,7 +16,7 @@ defmodule Observer.Web.Apps.ProcessActions do
 
   def content(assigns) do
     ~H"""
-    <div class="text-sm text-center block rounded bg-white dark:bg-gray-800 border border-solid border-blueGray-100 shadow-secondary-1 text-surface">
+    <div class="text-sm text-center block rounded bg-base-100 border border-solid border-base-300 shadow-secondary-1 text-surface">
       <div class="font-mono font-semibold border-b-1 rounded-t border-neutral-100 px-6 py-1 bg-zinc-200 dark:bg-zinc-500">
         Process Actions
       </div>
@@ -29,7 +29,7 @@ defmodule Observer.Web.Apps.ProcessActions do
             phx-value-action="garbage_collect"
             disabled={not Resolver.can?(:garbage_collect_process, @access)}
             class={
-              "flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip " <>
+              "flex items-center justify-center gap-2 px-4 py-2 bg-base-200 hover:bg-base-300 text-base-content text-sm font-semibold rounded-lg border border-base-300 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip " <>
                 Core.gated_classes()
             }
             title="Run garbage collection on this process"
@@ -44,7 +44,7 @@ defmodule Observer.Web.Apps.ProcessActions do
             phx-value-action="kill"
             disabled={not Resolver.can?(:kill_process, @access)}
             class={
-              "flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip " <>
+              "flex items-center justify-center gap-2 px-4 py-2 bg-base-200 hover:bg-base-300 text-base-content text-sm font-semibold rounded-lg border border-base-300 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip " <>
                 Core.gated_classes()
             }
             title="Terminate the selected process"
@@ -107,25 +107,24 @@ defmodule Observer.Web.Apps.ProcessActions do
           class="sr-only peer"
           checked={@memory_monitor}
         />
-        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-focus:ring-4 peer-focus:ring-teal-300 dark:peer-focus:ring-teal-800 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600 dark:peer-checked:bg-teal-600">
+        <div class="relative w-11 h-6 bg-base-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-primary/30 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-base-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
         </div>
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Memory Monitor</span>
       </label>
 
       <div>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
-          Node: <span class="font-mono text-gray-700 dark:text-gray-200">{@node}</span>
+        <p class="text-xs text-muted mt-3 italic">
+          Node: <span class="font-mono text-base-content">{@node}</span>
         </p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 p-1 italic">
-          Process ID:
-          <span class="font-mono text-gray-600 dark:text-gray-300">{process_info(@node, @id)}</span>
+        <p class="text-xs text-muted p-1 italic">
+          Process ID: <span class="font-mono text-base-content">{process_info(@node, @id)}</span>
         </p>
       </div>
     </div>
     """
   end
 
-  defp border_error(true), do: "border-red-200 focus:border-red-400 hover:border-red-300"
+  defp border_error(true), do: "border-error focus:border-error hover:border-error"
   defp border_error(_false), do: "border-slate-200 focus:border-slate-400 hover:border-slate-300"
 
   defp process_info(node, id) do
