@@ -1,0 +1,64 @@
+/* Design tokens, adapted from the deployex dashboard's shared token file so the two keep a matching
+   palette. Plain CSS custom properties, no Tailwind/daisyUI syntax - edit the values here and every
+   class built on them (in the @theme block in app.css) picks it up, without touching component files.
+
+   The light values apply on :root; .dark overrides them, matching this project's own dark-mode
+   mechanism (a `dark` class toggled on <html> by the Themer hook), not deployex's `data-theme` attr. */
+
+:root {
+  --dx-base-100: oklch(98.6% 0.006 85);
+  --dx-base-200: oklch(95% 0.011 80);
+  --dx-base-300: oklch(88.5% 0.016 75);
+  --dx-base-content: oklch(23% 0.014 60);
+  --dx-muted: color-mix(in oklch, var(--dx-base-content) 66%, var(--dx-base-100));
+
+  --dx-primary: oklch(70% 0.213 47.604);
+  --dx-primary-content: oklch(98% 0.016 73.684);
+  --dx-primary-text: oklch(50% 0.16 42);
+  --dx-secondary: oklch(52% 0.02 60);
+  --dx-secondary-content: oklch(98.6% 0.006 85);
+  --dx-neutral: oklch(44% 0.017 60);
+  --dx-neutral-content: oklch(98.6% 0.006 85);
+
+  --dx-info: oklch(62% 0.214 259.815);
+  --dx-info-content: oklch(97% 0.014 254.604);
+  --dx-info-text: oklch(47% 0.17 260);
+  --dx-success: oklch(70% 0.14 182.503);
+  --dx-success-content: oklch(98% 0.014 180.72);
+  --dx-success-text: oklch(44% 0.09 182);
+  --dx-warning: oklch(66% 0.179 58.318);
+  --dx-warning-content: oklch(98% 0.022 95.277);
+  --dx-warning-text: oklch(47% 0.12 58);
+  --dx-error: oklch(58% 0.253 17.585);
+  --dx-error-content: oklch(96% 0.015 12.422);
+  --dx-error-text: oklch(48% 0.19 20);
+}
+
+.dark {
+  --dx-base-100: oklch(30.33% 0.016 252.42);
+  --dx-base-200: oklch(25.26% 0.014 253.1);
+  --dx-base-300: oklch(20.15% 0.012 254.09);
+  --dx-base-content: oklch(97.807% 0.029 256.847);
+  --dx-muted: color-mix(in oklch, var(--dx-base-content) 66%, var(--dx-base-100));
+
+  --dx-primary: oklch(58% 0.233 277.117);
+  --dx-primary-content: oklch(96% 0.018 272.314);
+  --dx-primary-text: oklch(80% 0.11 277);
+  --dx-secondary: oklch(58% 0.233 277.117);
+  --dx-secondary-content: oklch(96% 0.018 272.314);
+  --dx-neutral: oklch(37% 0.044 257.287);
+  --dx-neutral-content: oklch(98% 0.003 247.858);
+
+  --dx-info: oklch(58% 0.158 241.966);
+  --dx-info-content: oklch(97% 0.013 236.62);
+  --dx-info-text: oklch(82% 0.09 240);
+  --dx-success: oklch(60% 0.118 184.704);
+  --dx-success-content: oklch(98% 0.014 180.72);
+  --dx-success-text: oklch(82% 0.09 182);
+  --dx-warning: oklch(66% 0.179 58.318);
+  --dx-warning-content: oklch(98% 0.022 95.277);
+  --dx-warning-text: oklch(84% 0.12 72);
+  --dx-error: oklch(58% 0.253 17.585);
+  --dx-error-content: oklch(96% 0.015 12.422);
+  --dx-error-text: oklch(80% 0.12 20);
+}

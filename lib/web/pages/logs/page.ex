@@ -9,8 +9,8 @@ defmodule Observer.Web.Logs.Page do
 
   use Observer.Web, :live_component
 
-  alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.Logs
 
@@ -19,58 +19,50 @@ defmodule Observer.Web.Logs.Page do
   @impl Phoenix.LiveComponent
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-white dark:bg-gray-800">
-      <Attention.content
-        id="logs"
-        title="Attention"
-        class="border-red-400 dark:border-red-700 text-red-500 dark:text-red-200"
-        message={attention_msg()}
-      >
-        <:inner_form>
-          <.form
-            for={@form}
-            id="logs-update-form"
-            class="flex flex-col md:flex-row md:items-end shrink-0 ml-2 mr-2 py-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-x-5 gap-y-1"
-            phx-change="form-update"
-          >
-            <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
-            <Core.input
-              field={@form[:file]}
-              type="select"
-              label="Log File"
-              options={Enum.map(@handlers, & &1.file)}
-            />
-            <Core.input
-              field={@form[:max_bytes]}
-              type="select"
-              label="Tail Size"
-              options={Enum.map(tail_sizes(), fn {label, bytes} -> {label, to_string(bytes)} end)}
-            />
-            <Core.input
-              field={@form[:refresh_seconds]}
-              type="select"
-              label="Refresh"
-              options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
-            />
-          </.form>
-        </:inner_form>
-        <:inner_button>
-          <button
-            id="logs-refresh"
-            phx-click="logs-refresh"
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80"
-          >
-            REFRESH
-          </button>
-        </:inner_button>
-      </Attention.content>
+    <div class="min-h-screen bg-base-100">
+      <Toolbar.content>
+        <.form
+          for={@form}
+          id="logs-update-form"
+          class="flex flex-col md:flex-row md:items-end shrink-0 text-xs text-center text-base-content whitespace-nowrap gap-x-5 gap-y-1"
+          phx-change="form-update"
+        >
+          <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
+          <Core.input
+            field={@form[:file]}
+            type="select"
+            label="Log File"
+            options={Enum.map(@handlers, & &1.file)}
+          />
+          <Core.input
+            field={@form[:max_bytes]}
+            type="select"
+            label="Tail Size"
+            options={Enum.map(tail_sizes(), fn {label, bytes} -> {label, to_string(bytes)} end)}
+          />
+          <Core.input
+            field={@form[:refresh_seconds]}
+            type="select"
+            label="Refresh"
+            options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
+          />
+        </.form>
+
+        <button
+          id="logs-refresh"
+          phx-click="logs-refresh"
+          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+        >
+          REFRESH
+        </button>
+      </Toolbar.content>
 
       <div class="p-2">
-        <div :if={@tail_error} class="p-4 text-sm text-red-500 dark:text-red-300">
+        <div :if={@tail_error} class="p-4 text-sm text-error">
           Could not read {@form.params["file"]}: {inspect(@tail_error)}
         </div>
 
-        <div :if={@handlers == []} class="p-4 text-sm text-gray-500 dark:text-gray-400">
+        <div :if={@handlers == []} class="p-4 text-sm text-muted">
           No file-backed logger handlers found on {@form.params["service"]}. Logs are read from
           the node's <span class="font-mono font-semibold">:logger</span>
           handlers configured with a <span class="font-mono font-semibold">:file</span>
@@ -78,24 +70,24 @@ defmodule Observer.Web.Logs.Page do
           pointing at a log file path).
         </div>
 
-        <div :if={@tail} class="bg-white dark:bg-gray-800 w-full shadow-lg rounded">
+        <div :if={@tail} class="bg-base-100 w-full shadow-lg rounded">
           <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
-            <span class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700">
+            <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
               File size: {format_bytes(@tail.size)}
             </span>
-            <span class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700">
+            <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
               Entries: {length(@log_entries)}
             </span>
             <span
               :if={@tail.truncated?}
-              class="px-2 py-1 rounded-full bg-yellow-50 border border-yellow-300 text-yellow-700"
+              class="px-2 py-1 rounded-full bg-warning/10 border border-warning text-warning"
             >
               Showing the last {@form.params["max_bytes"] |> String.to_integer() |> format_bytes()}
             </span>
           </div>
           <div
             :if={@log_entries == []}
-            class="mx-2 mb-2 p-3 text-xs text-gray-500 dark:text-gray-400"
+            class="mx-2 mb-2 p-3 text-xs text-muted"
           >
             The file is empty.
           </div>
@@ -103,7 +95,7 @@ defmodule Observer.Web.Logs.Page do
             :if={@log_entries != []}
             id="logs-tail-content"
             phx-hook="ScrollBottom"
-            class="mx-2 mb-2 p-3 rounded bg-gray-50 dark:bg-gray-900 text-xs text-gray-800 dark:text-gray-200 font-mono max-h-[70vh] overflow-y-auto"
+            class="mx-2 mb-2 p-3 rounded bg-base-200 text-xs text-base-content font-mono max-h-[70vh] overflow-y-auto"
           >
             <Core.disclosure
               :for={{entry, index} <- Enum.with_index(@log_entries)}
@@ -114,9 +106,9 @@ defmodule Observer.Web.Logs.Page do
             >
               <:summary>
                 {entry.summary}
-                <span :if={entry.multiline?} class="text-gray-400 dark:text-gray-500">…</span>
+                <span :if={entry.multiline?} class="text-muted">…</span>
               </:summary>
-              <pre class="mt-1 mb-2 whitespace-pre-wrap break-all text-gray-700 dark:text-gray-300">{entry.content}</pre>
+              <pre class="mt-1 mb-2 whitespace-pre-wrap break-all text-base-content">{entry.content}</pre>
             </Core.disclosure>
           </div>
         </div>
@@ -329,8 +321,8 @@ defmodule Observer.Web.Logs.Page do
     end
   end
 
-  defp level_class(:error), do: "text-red-600 dark:text-red-300"
-  defp level_class(:warning), do: "text-yellow-600 dark:text-yellow-300"
+  defp level_class(:error), do: "text-error"
+  defp level_class(:warning), do: "text-warning"
   defp level_class(nil), do: nil
 
   defp tail_sizes, do: @tail_sizes
@@ -363,18 +355,6 @@ defmodule Observer.Web.Logs.Page do
       {bytes, ""} -> Enum.find(allowed, 65_536, &(&1 == bytes))
       _invalid -> 65_536
     end
-  end
-
-  defp attention_msg do
-    assigns = %{}
-
-    ~H"""
-    A bounded, read-only tail of the selected service's file-backed logger handlers. Only files
-    configured on the node's :logger handlers can be read, and never more than the selected tail
-    size. The tail refreshes automatically at the selected interval (press REFRESH to update
-    immediately, or pause the interval) and follows the newest entries unless you scroll away
-    from the bottom.
-    """
   end
 
   defp format_bytes(bytes) when bytes >= 1_073_741_824,

@@ -7,8 +7,8 @@ defmodule Observer.Web.Metrics.Page do
 
   use Observer.Web, :live_component
 
-  alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Icons
   alias Observer.Web.Components.Metrics.Phoenix, as: MetricsPhoenix
   alias Observer.Web.Components.Metrics.PhxLvSocket
   alias Observer.Web.Components.Metrics.VmLimits
@@ -18,6 +18,7 @@ defmodule Observer.Web.Metrics.Page do
   alias Observer.Web.Components.Metrics.VmRunQueue
   alias Observer.Web.Components.Metrics.VmSchedulerUtilization
   alias Observer.Web.Components.MultiSelect
+  alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.Telemetry
 
@@ -28,8 +29,6 @@ defmodule Observer.Web.Metrics.Page do
 
     unselected_metrics_keys =
       assigns.node_info.metrics_keys -- assigns.node_info.selected_metrics_keys
-
-    attention_msg = ""
 
     mode_color =
       case assigns.mode do
@@ -47,7 +46,6 @@ defmodule Observer.Web.Metrics.Page do
       assigns
       |> assign(unselected_services_keys: unselected_services_keys)
       |> assign(unselected_metrics_keys: unselected_metrics_keys)
-      |> assign(attention_msg: attention_msg)
       |> assign(mode_color: mode_color)
       |> assign(
         services_unselected_highlight:
@@ -55,46 +53,8 @@ defmodule Observer.Web.Metrics.Page do
       )
 
     ~H"""
-    <div class="min-h-screen bg-white dark:bg-gray-800">
-      <Attention.content
-        id="metrics"
-        title="Configuration"
-        class="border-orange-400 dark:border-orange-600 text-orange-500 dark:text-orange-200 rounded-r-xl w-full"
-        message={@attention_msg}
-      >
-        <:inner_form>
-          <.form
-            for={@form}
-            id="metrics-update-form"
-            class="flex ml-2 mr-2 text-xs rounded-r-xl text-center text-zinc-800 dark:text-white whitespace-nowrap gap-5"
-            phx-change="form-update"
-          >
-            <Core.input
-              field={@form[:num_cols]}
-              type="select"
-              label="Column Size"
-              options={["1", "2", "3", "4"]}
-            />
-            <Core.input
-              field={@form[:start_time]}
-              type="select"
-              label="Start Time"
-              options={["1m", "5m", "15m", "30m", "1h", "6h", "12h", "1d", "3d", "1w"]}
-            />
-
-            <div>
-              <Core.label>Mode</Core.label>
-              <button
-                type="button"
-                class={["#{@mode_color}", "font-medium rounded-lg text-sm mt-2 px-5 py-2 text-center"]}
-              >
-                {@mode}
-              </button>
-            </div>
-          </.form>
-        </:inner_form>
-      </Attention.content>
-      <div class="bg-white dark:bg-gray-800">
+    <div class="min-h-screen bg-base-100">
+      <Toolbar.content>
         <MultiSelect.content
           id="metrics-multi-select"
           selected_text="Selected metrics"
@@ -112,6 +72,70 @@ defmodule Observer.Web.Metrics.Page do
           ]}
           show_options={@show_metric_options}
         />
+
+        <div
+          id="metrics-settings-wrap"
+          class="relative inline-flex shrink-0"
+          phx-click-away={JS.hide(to: "#metrics-settings-panel")}
+          phx-window-keydown={JS.hide(to: "#metrics-settings-panel")}
+          phx-key="escape"
+        >
+          <button
+            type="button"
+            id="metrics-settings-toggle"
+            title="Metrics settings"
+            aria-label="Metrics settings"
+            phx-click={
+              JS.toggle(
+                to: "#metrics-settings-panel",
+                in: "ease-in duration-150",
+                out: "ease-out duration-100"
+              )
+            }
+            class="inline-flex items-center gap-x-1 text-xs font-semibold text-muted hover:text-base-content border border-base-300 rounded px-2 py-1"
+          >
+            Settings <Icons.chevron_down class="w-3 h-3" />
+          </button>
+          <div
+            id="metrics-settings-panel"
+            class="hidden absolute left-full top-0 ml-2 z-40 w-56 rounded-md shadow-lg bg-base-100 border border-base-300 p-3"
+          >
+            <.form
+              for={@form}
+              id="metrics-update-form"
+              class="flex flex-col gap-y-2 text-xs text-left text-base-content"
+              phx-change="form-update"
+            >
+              <Core.input
+                field={@form[:num_cols]}
+                type="select"
+                label="Column Size"
+                options={["1", "2", "3", "4"]}
+              />
+              <Core.input
+                field={@form[:start_time]}
+                type="select"
+                label="Start Time"
+                options={["1m", "5m", "15m", "30m", "1h", "6h", "12h", "1d", "3d", "1w"]}
+              />
+
+              <div>
+                <Core.label>Mode</Core.label>
+                <button
+                  type="button"
+                  class={[
+                    "#{@mode_color}",
+                    "font-medium rounded-lg text-sm mt-2 px-5 py-2 text-center"
+                  ]}
+                >
+                  {@mode}
+                </button>
+              </div>
+            </.form>
+          </div>
+        </div>
+      </Toolbar.content>
+      <div class="bg-base-100">
         <div class="p-2">
           <div class="grid grid-cols-4 gap-2 items-center">
             <%= for service <- @node_info.selected_services_keys do %>
@@ -229,6 +253,10 @@ defmodule Observer.Web.Metrics.Page do
     show_metric_options = !socket.assigns.show_metric_options
 
     {:noreply, socket |> assign(:show_metric_options, show_metric_options)}
+  end
+
+  def handle_parent_event("close-options", _value, socket) do
+    {:noreply, assign(socket, :show_metric_options, false)}
   end
 
   def handle_parent_event(

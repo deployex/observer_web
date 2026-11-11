@@ -84,7 +84,7 @@ defmodule Observer.Web.Ets.PageLiveTest do
 
     html =
       index_live
-      |> element("#ets-details-close", "CLOSE")
+      |> element("#ets-details-close")
       |> render_click()
 
     refute html =~ "Content inspection is disabled"

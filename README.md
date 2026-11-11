@@ -52,6 +52,12 @@ library is part of the [DeployEx][dye] project.
 
 See the [installation guide](https://hexdocs.pm/observer_web/installation.html) for details on installing and Configuring.
 
+## Theming
+
+Colors come from a small set of CSS custom properties in `assets/css/tokens.css`, one block for light mode and one for dark mode.
+They're mapped to Tailwind utilities (`bg-primary`, `bg-base-100`, `text-muted`, `bg-success`, and so on) in the `@theme` block of `assets/css/app.css`, so a class built on a token needs no separate `dark:` variant - the underlying variable itself switches with the page's `dark` class.
+To change the palette, edit the values in `tokens.css` and rebuild assets; nothing else needs to change.
+
 ## Supported Versions
 
 Observer Web follows the same support policy as [DeployEx][dye]: the last two major Erlang/OTP releases, and the last two major Phoenix releases.

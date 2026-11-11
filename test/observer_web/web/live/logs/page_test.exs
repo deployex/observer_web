@@ -170,8 +170,8 @@ defmodule Observer.Web.Logs.PageLiveTest do
     assert html =~ "another single line"
 
     # Level coloring on the summaries
-    assert html =~ "text-red-600"
-    assert html =~ "text-yellow-600"
+    assert html =~ "text-error"
+    assert html =~ "text-warning"
   end
 
   test "long single-line entries stay expandable", %{conn: conn} do

@@ -10,8 +10,9 @@ defmodule Observer.Web.Ets.Page do
 
   use Observer.Web, :live_component
 
-  alias Observer.Web.Components.Attention
   alias Observer.Web.Components.Core
+  alias Observer.Web.Components.Icons
+  alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.Ets
   alias ObserverWeb.Mnesia
@@ -21,81 +22,78 @@ defmodule Observer.Web.Ets.Page do
     assigns = assign(assigns, :source, source_atom(assigns.form.params["source"]))
 
     ~H"""
-    <div class="min-h-screen bg-white dark:bg-gray-800">
-      <Attention.content
-        id="ets"
-        title="Attention"
-        class="border-red-400 dark:border-red-700 text-red-500 dark:text-red-200"
-        message={attention_msg()}
-      >
-        <:inner_form>
-          <.form
-            for={@form}
-            id="ets-update-form"
-            class="flex flex-col md:flex-row md:items-end shrink-0 ml-2 mr-2 py-2 text-xs text-center text-zinc-800 dark:text-white whitespace-nowrap gap-x-5 gap-y-1"
-            phx-change="form-update"
-          >
-            <Core.input
-              field={@form[:source]}
-              type="select"
-              label="Source"
-              options={[{"ETS", "ets"}, {"Mnesia", "mnesia"}]}
-            />
+    <div class={[
+      "min-h-screen bg-base-100",
+      @details && @details_panel_collapsed && "pb-16",
+      @details && !@details_panel_collapsed && !@details_panel_expanded && "pb-[70vh]",
+      @details && !@details_panel_collapsed && @details_panel_expanded && "pb-[92vh]"
+    ]}>
+      <Toolbar.content>
+        <.form
+          for={@form}
+          id="ets-update-form"
+          class="flex flex-col md:flex-row md:items-end shrink-0 text-xs text-center text-base-content whitespace-nowrap gap-x-5 gap-y-1"
+          phx-change="form-update"
+        >
+          <Core.input
+            field={@form[:source]}
+            type="select"
+            label="Source"
+            options={[{"ETS", "ets"}, {"Mnesia", "mnesia"}]}
+          />
 
-            <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
+          <Core.input field={@form[:service]} type="select" label="Service" options={@services} />
 
-            <Core.input
-              field={@form[:sort_by]}
-              type="select"
-              label="Sort by"
-              options={[{"Memory", "memory"}, {"Size", "size"}, {"Name", "name"}]}
-            />
+          <Core.input
+            field={@form[:sort_by]}
+            type="select"
+            label="Sort by"
+            options={[{"Memory", "memory"}, {"Size", "size"}, {"Name", "name"}]}
+          />
 
-            <Core.input field={@form[:search]} type="text" label="Search" phx-debounce="300" />
-          </.form>
-        </:inner_form>
-        <:inner_button>
-          <button
-            id="ets-refresh"
-            phx-click="ets-refresh"
-            class="phx-submit-loading:opacity-75 rounded-r-xl bg-green-500 dark:bg-green-700 transform active:scale-75 transition-transform hover:bg-green-800 dark:hover:bg-green-800 self-stretch w-40 xl:w-64 flex items-center justify-center text-sm font-semibold text-white active:text-white/80"
-          >
-            REFRESH
-          </button>
-        </:inner_button>
-      </Attention.content>
+          <Core.input field={@form[:search]} type="text" label="Search" phx-debounce="300" />
+        </.form>
+
+        <button
+          id="ets-refresh"
+          phx-click="ets-refresh"
+          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+        >
+          REFRESH
+        </button>
+      </Toolbar.content>
 
       <div class="p-2">
         <div
           :if={@tables_error == :mnesia_not_running}
-          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+          class="p-4 text-sm text-muted"
         >
           Mnesia is not running on {@form.params["service"]}.
         </div>
         <div
           :if={@tables_error && @tables_error != :mnesia_not_running}
-          class="p-4 text-sm text-red-500 dark:text-red-300"
+          class="p-4 text-sm text-error"
         >
           Could not list tables on {@form.params["service"]}: {inspect(@tables_error)}
         </div>
 
         <div
           :if={@tables == nil and @tables_error == nil}
-          class="p-4 text-sm text-gray-500 dark:text-gray-400"
+          class="p-4 text-sm text-muted"
         >
           Collecting ETS tables...
         </div>
 
         <div :if={@tables} class="flex flex-wrap gap-2 px-2 pb-2 text-xs">
-          <span class="px-2 py-1 rounded-full bg-teal-50 border border-teal-300 text-teal-700">
+          <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
             Tables: {length(@tables)}
           </span>
-          <span class="px-2 py-1 rounded-full bg-blue-50 border border-blue-300 text-blue-700">
+          <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
             Total memory: {format_bytes(Enum.sum(Enum.map(@tables, & &1.memory)))}
           </span>
           <span
             :if={@rows != nil and length(@rows) != length(@tables)}
-            class="px-2 py-1 rounded-full bg-gray-50 border border-gray-300 text-gray-700"
+            class="px-2 py-1 rounded-full bg-base-200 border border-base-300 text-base-content"
           >
             Showing: {length(@rows)}
           </span>
@@ -103,7 +101,7 @@ defmodule Observer.Web.Ets.Page do
 
         <div
           :if={@rows != nil and @rows != []}
-          class="bg-white dark:bg-gray-800 w-full shadow-lg rounded"
+          class="bg-base-100 w-full shadow-lg rounded"
         >
           <Core.table_tracing id="ets-results" rows={Enum.with_index(@rows)}>
             <:col :let={{table, _index}} label="NAME">
@@ -126,7 +124,7 @@ defmodule Observer.Web.Ets.Page do
                 id={"ets-select-row-#{index}"}
                 phx-click="ets-select-row"
                 phx-value-index={index}
-                class="text-xs font-semibold text-blue-600 dark:text-blue-300 hover:underline"
+                class="text-xs font-semibold text-primary border border-primary rounded px-2.5 py-1 hover:bg-primary hover:text-primary-content transition-colors"
               >
                 DETAILS
               </button>
@@ -136,55 +134,107 @@ defmodule Observer.Web.Ets.Page do
 
         <div
           :if={@details}
-          class="mt-4 bg-white dark:bg-gray-800 w-full shadow-lg rounded border border-gray-200 dark:border-gray-600"
+          id="ets-details-panel"
+          phx-mounted={
+            JS.transition(
+              {"transition-transform duration-300 ease-out", "translate-y-full", "translate-y-0"}
+            )
+          }
+          class={[
+            "fixed inset-x-0 bottom-0 z-30 flex flex-col bg-base-100 border-t border-base-300 shadow-2xl",
+            @details_panel_expanded && "max-h-[92vh]",
+            !@details_panel_expanded && "max-h-[70vh]"
+          ]}
         >
-          <div class="flex items-center justify-between px-4 pt-2">
-            <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          <div class="flex items-center justify-between px-4 py-2 border-b border-base-300 shrink-0">
+            <h2 class="text-sm font-semibold text-base-content">
               Table {inspect(@details.table.name)}
             </h2>
-            <button
-              id="ets-details-close"
-              phx-click="ets-details-close"
-              class="text-xs font-semibold text-gray-500 dark:text-gray-300 hover:underline"
-            >
-              CLOSE
-            </button>
-          </div>
-
-          <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
-            <span
-              :for={{label, value} <- details_badges(@details.table, @source)}
-              class="px-2 py-1 rounded-full bg-gray-50 dark:bg-gray-700 border border-gray-300 text-gray-700 dark:text-gray-200"
-            >
-              {label}: {value}
-            </span>
-          </div>
-
-          <div
-            :if={@details.content == {:error, :content_inspection_disabled}}
-            class="px-4 pb-4 text-xs text-gray-500 dark:text-gray-400"
-          >
-            Content inspection is disabled. Table contents are live production data - to enable
-            bounded, read-only previews, set <code class="font-mono">config :observer_web, table_content_inspection: true</code>.
-          </div>
-
-          <div
-            :if={@details.content == {:error, :not_accessible}}
-            class="px-4 pb-4 text-xs text-gray-500 dark:text-gray-400"
-          >
-            This table's contents are not accessible (private table, or it no longer exists).
-          </div>
-
-          <div :if={match?({:ok, _}, @details.content)} class="px-4 pb-4">
-            <h3 class="text-xs font-semibold text-gray-700 dark:text-gray-200 pb-1">
-              First objects (bounded preview)
-            </h3>
-            <div :if={elem(@details.content, 1) == []} class="text-xs text-gray-500">
-              The table is empty.
+            <div class="flex items-center gap-x-3">
+              <button
+                :if={not @details_panel_collapsed}
+                id="ets-details-panel-expand"
+                type="button"
+                aria-label={
+                  if @details_panel_expanded, do: "Shrink details panel", else: "Expand details panel"
+                }
+                title={if @details_panel_expanded, do: "Shrink", else: "Expand"}
+                phx-click="ets-details-panel-expand"
+                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
+              >
+                <%= if @details_panel_expanded do %>
+                  <Icons.arrows_pointing_in class="w-5 h-5" />
+                <% else %>
+                  <Icons.arrows_pointing_out class="w-5 h-5" />
+                <% end %>
+              </button>
+              <button
+                id="ets-details-panel-collapse"
+                type="button"
+                aria-label={
+                  if @details_panel_collapsed,
+                    do: "Restore details panel",
+                    else: "Minimize details panel"
+                }
+                title={if @details_panel_collapsed, do: "Restore", else: "Minimize"}
+                phx-click="ets-details-panel-collapse"
+                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
+              >
+                <%= if @details_panel_collapsed do %>
+                  <Icons.chevron_up class="w-5 h-5" />
+                <% else %>
+                  <Icons.chevron_down class="w-5 h-5" />
+                <% end %>
+              </button>
+              <button
+                id="ets-details-close"
+                type="button"
+                aria-label="Close details panel"
+                title="Close"
+                phx-click="ets-details-close"
+                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
+              >
+                <Icons.x_mark class="w-5 h-5" />
+              </button>
             </div>
-            <ul class="text-xs font-mono text-gray-600 dark:text-gray-300 space-y-1 break-all">
-              <li :for={object <- elem(@details.content, 1)}>{object}</li>
-            </ul>
+          </div>
+
+          <div :if={not @details_panel_collapsed} class="overflow-y-auto">
+            <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
+              <span
+                :for={{label, value} <- details_badges(@details.table, @source)}
+                class="px-2 py-1 rounded-full bg-base-200 border border-base-300 text-base-content"
+              >
+                {label}: {value}
+              </span>
+            </div>
+
+            <div
+              :if={@details.content == {:error, :content_inspection_disabled}}
+              class="px-4 pb-4 text-xs text-muted"
+            >
+              Content inspection is disabled. Table contents are live production data - to enable
+              bounded, read-only previews, set <code class="font-mono">config :observer_web, table_content_inspection: true</code>.
+            </div>
+
+            <div
+              :if={@details.content == {:error, :not_accessible}}
+              class="px-4 pb-4 text-xs text-muted"
+            >
+              This table's contents are not accessible (private table, or it no longer exists).
+            </div>
+
+            <div :if={match?({:ok, _}, @details.content)} class="px-4 pb-4">
+              <h3 class="text-xs font-semibold text-base-content pb-1">
+                First objects (bounded preview)
+              </h3>
+              <div :if={elem(@details.content, 1) == []} class="text-xs text-muted">
+                The table is empty.
+              </div>
+              <ul class="text-xs font-mono text-base-content space-y-1 break-all">
+                <li :for={object <- elem(@details.content, 1)}>{object}</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -211,6 +261,8 @@ defmodule Observer.Web.Ets.Page do
     |> assign(:tables, nil)
     |> assign(:rows, nil)
     |> assign(:details, nil)
+    |> assign(:details_panel_collapsed, false)
+    |> assign(:details_panel_expanded, false)
     |> assign(:tables_error, nil)
     |> assign(
       :form,
@@ -279,6 +331,14 @@ defmodule Observer.Web.Ets.Page do
 
   def handle_parent_event("ets-details-close", _params, socket) do
     {:noreply, assign(socket, :details, nil)}
+  end
+
+  def handle_parent_event("ets-details-panel-collapse", _params, socket) do
+    {:noreply, assign(socket, :details_panel_collapsed, !socket.assigns.details_panel_collapsed)}
+  end
+
+  def handle_parent_event("ets-details-panel-expand", _params, socket) do
+    {:noreply, assign(socket, :details_panel_expanded, !socket.assigns.details_panel_expanded)}
   end
 
   @impl Page
@@ -396,17 +456,6 @@ defmodule Observer.Web.Ets.Page do
       {int, ""} when int >= 0 -> int
       _invalid -> default
     end
-  end
-
-  defp attention_msg do
-    assigns = %{}
-
-    ~H"""
-    Every ETS table on the selected service with its owner, protection, type and memory
-    footprint. Table contents are live production data: previews are read-only, bounded to the
-    first objects, and disabled unless explicitly enabled in the configuration. Data is collected
-    on demand - press REFRESH to update.
-    """
   end
 
   defp format_bytes(bytes) when bytes >= 1_073_741_824,

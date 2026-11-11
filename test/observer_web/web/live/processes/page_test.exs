@@ -90,7 +90,7 @@ defmodule Observer.Web.Processes.PageLiveTest do
 
     html =
       index_live
-      |> element("#processes-details-close", "CLOSE")
+      |> element("#processes-details-close")
       |> render_click()
 
     refute html =~ "current stacktrace"

@@ -124,7 +124,7 @@ defmodule Observer.Web.Crashdump.PageLiveTest do
 
     html =
       index_live
-      |> element("#crashdump-details-close", "CLOSE")
+      |> element("#crashdump-details-close")
       |> render_click()
 
     refute html =~ "stack dump"

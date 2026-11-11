@@ -415,6 +415,54 @@ defmodule Observer.Web.Components.Icons do
 
   attr :rest, :global
 
+  def chevron_down(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </.svg_outline>
+    """
+  end
+
+  attr :rest, :global
+
+  def chevron_up(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+    </.svg_outline>
+    """
+  end
+
+  attr :rest, :global
+
+  def arrows_pointing_out(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9m11.25-5.25h-4.5m4.5 0v4.5m0-4.5L15 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15m11.25 5.25h-4.5m4.5 0v-4.5m0 4.5L15 15"
+      />
+    </.svg_outline>
+    """
+  end
+
+  attr :rest, :global
+
+  def arrows_pointing_in(assigns) do
+    ~H"""
+    <.svg_outline {@rest}>
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5M15 15l5.25 5.25"
+      />
+    </.svg_outline>
+    """
+  end
+
+  attr :rest, :global
+
   def x_circle(assigns) do
     ~H"""
     <.svg_outline {@rest}>

@@ -64,7 +64,7 @@ defmodule Observer.Web.Network.PageLiveTest do
 
       html =
         index_live
-        |> element("#network-details-close", "CLOSE")
+        |> element("#network-details-close")
         |> render_click()
 
       refute html =~ "recv (total)"

@@ -11,7 +11,7 @@ defmodule Observer.Web.Components.Confirm do
     ~H"""
     <div id={@id}>
       <div
-        class="fixed inset-0 z-20 overflow-y-auto"
+        class="fixed inset-0 z-50 overflow-y-auto"
         phx-window-keydown="confirm-close-modal"
         phx-key="escape"
       >

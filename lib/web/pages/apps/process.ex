@@ -90,7 +90,7 @@ defmodule Observer.Web.Apps.Process do
           <Attention.content
             id="apps-process-alert"
             title="Warning"
-            class="border-red-400 text-red-500"
+            class="border-error text-error"
             message={"#{@id} is either dead or protected and therefore can not be shown."}
           />
         <% true -> %>
@@ -216,7 +216,7 @@ defmodule Observer.Web.Apps.Process do
 
   defp relations(assigns) do
     ~H"""
-    <div class=" text-sm text-center block rounded bg-white dark:bg-gray-800 border border-solid border-blueGray-100 shadow-secondary-1 text-surface">
+    <div class=" text-sm text-center block rounded bg-base-100 border border-solid border-base-300 shadow-secondary-1 text-surface">
       <div class={[
         "font-mono font-semibold border-b-1 rounded-t border-neutral-100 px-6 py-1",
         title_bg_color(@title_bg_color)

@@ -43,7 +43,7 @@ defmodule Observer.Web.Apps.Port do
           <Attention.content
             id="observer-port"
             title="Warning"
-            class="border-red-400 text-red-500"
+            class="border-error text-error"
             message={"#{@id} is either dead or protected and therefore can not be shown."}
           />
         <% true -> %>

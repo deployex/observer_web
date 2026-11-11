@@ -1,13 +1,10 @@
 defmodule Observer.Web.Components.MultiSelect do
   @moduledoc """
   Multi select box
-
-  References:
-   * https://www.creative-tim.com/twcomponents/component/multi-select
-
   """
   use Phoenix.Component
 
+  alias Observer.Web.Components.Icons
   alias Observer.Web.Helpers
   alias Phoenix.LiveView.JS
 
@@ -18,181 +15,90 @@ defmodule Observer.Web.Components.MultiSelect do
   attr :show_options, :boolean, required: true
 
   def content(assigns) do
+    panel_id = "#{assigns.id}-panel"
+
+    close = JS.hide(to: "##{panel_id}") |> JS.push("close-options")
+
+    toggle =
+      JS.toggle(to: "##{panel_id}", in: "ease-in duration-150", out: "ease-out duration-100")
+      |> JS.push("toggle-options")
+
+    assigns = assign(assigns, panel_id: panel_id, close: close, toggle: toggle)
+
     ~H"""
-    <div class="w-full m flex flex-col items-center mx-auto">
-      <div class="w-full px-2">
-        <div class="flex flex-col items-center relative">
-          <div class="w-full  ">
-            <div class="my-2 p-1 flex border border-gray-300 bg-white dark:bg-gray-900 rounded">
-              <div class="flex flex-auto flex-wrap">
-                <div class="flex text-ms font-normal items-center p-2 py-1 dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-600">
-                  {@selected_text}
-                </div>
+    <div
+      id={@id}
+      class="relative"
+      phx-click-away={@close}
+      phx-window-keydown={@close}
+      phx-key="escape"
+    >
+      <div class="flex flex-wrap items-center gap-1 px-2 py-1 border border-base-300 rounded-md bg-base-200 text-xs">
+        <span class="text-muted shrink-0">{@selected_text}</span>
 
-                <%= for item <- @selected do %>
-                  <%= for key <- item.keys do %>
-                    <div class={[
-                      "flex justify-center items-center m-1 font-medium py-1 px-2 rounded-full border",
-                      border_item_color(item.name),
-                      bg_item_color(item.name)
-                    ]}>
-                      <div class={[
-                        "text-sm font-normal leading-none max-w-full flex-initial",
-                        text_item_color(item.name)
-                      ]}>
-                        {"#{item.name}:#{key}"}
-                      </div>
-                      <button
-                        id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-remove-item")}
-                        class="flex flex-auto flex-row-reverse"
-                        phx-click="multi-select-remove-item"
-                        phx-value-key={key}
-                        phx-value-item={item.name}
-                      >
-                        <div>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="100%"
-                            height="100%"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            class="feather feather-x text-gray-900 dark:text-black cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
-                          >
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                        </div>
-                      </button>
-                    </div>
-                  <% end %>
-                <% end %>
-                <div class="flex-1">
-                  <input
-                    placeholder=""
-                    phx-click="toggle-options"
-                    class="p-0.5 bg-transparent border border-white dark:border-black p-1 px-2 appearance-none outline-none h-full w-full text-gray-800 focus:border-teal-500 dark:focus:border-teal-300"
-                  />
-                </div>
-              </div>
-              <div class="text-gray-300 w-8 py-1 pl-2 pr-1 border-l flex items-center border-gray-200 ">
-                <button
-                  id={Helpers.normalize_id("#{@id}-toggle-options")}
-                  class="cursor-pointer w-6 h-6 text-gray-600 outline-none focus:outline-none"
-                  phx-click="toggle-options"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="100%"
-                    height="100%"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    class="feather text-gray-900 dark:text-white feather-chevron-up w-4 h-4"
-                  >
-                    <polyline :if={!@show_options} points="18 15 12 9 6 15"></polyline>
-                    <polyline :if={@show_options} points="6 9 12 15 18 9"></polyline>
-                  </svg>
-                </button>
-              </div>
-            </div>
+        <%= for item <- @selected do %>
+          <%= for key <- item.keys do %>
+            <span class="inline-flex items-center gap-x-1 pl-1.5 pr-1 py-0.5 rounded border border-base-300 bg-base-100 text-base-content">
+              {"#{item.name}:#{key}"}
+              <button
+                id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-remove-item")}
+                type="button"
+                phx-click="multi-select-remove-item"
+                phx-value-key={key}
+                phx-value-item={item.name}
+                class="text-muted hover:text-base-content"
+              >
+                <Icons.x_mark class="w-3 h-3" />
+              </button>
+            </span>
+          <% end %>
+        <% end %>
 
-            <div
-              :if={@show_options}
-              class="relative shadow bg-white dark:bg-gray-800 z-40 lef-0 rounded max-h-select"
-            >
-              <div phx-mounted={
-                JS.transition(
-                  {"first:ease-in duration-300", "first:opacity-0 first:p-0 first:h-0",
-                   "first:opacity-100"},
-                  time: 300
-                )
-              }>
-                <%= for item <- @unselected do %>
-                  <div class="w-full flex-wrap bg-white dark:bg-gray-600">
-                    <div class="flex items-start p-2 ">
-                      <div class="text-sm font-bold text-black dark:text-white">{item.name}:</div>
-                    </div>
+        <button
+          type="button"
+          id={Helpers.normalize_id("#{@id}-toggle-options")}
+          phx-click={@toggle}
+          class="ml-auto inline-flex items-center text-muted hover:text-base-content"
+        >
+          <%= if @show_options do %>
+            <Icons.chevron_up class="w-3.5 h-3.5" />
+          <% else %>
+            <Icons.chevron_down class="w-3.5 h-3.5" />
+          <% end %>
+        </button>
+      </div>
 
-                    <div class="flex flex-wrap">
-                      <%= for key <- item.keys do %>
-                        <button
-                          id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-add-item")}
-                          class={[
-                            "flex justify-center items-center m-1 font-medium px-2 rounded-full",
-                            unselected_highlight_color(key, item.unselected_highlight)
-                          ]}
-                          phx-click="multi-select-add-item"
-                          phx-value-key={key}
-                          phx-value-item={item.name}
-                        >
-                          <div class="text-sm font-normal text-black dark:text-white leading-none max-w-full flex-initial">
-                            {key}
-                          </div>
-                          <div class="flex flex-auto flex-row-reverse">
-                            <div>
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="100%"
-                                height="100%"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                class="feather feather-x text-gray-900 dark:text-white cursor-pointer hover:text-teal-400 rounded-full w-4 h-4 ml-2"
-                              >
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                              </svg>
-                            </div>
-                          </div>
-                        </button>
-                      <% end %>
-                    </div>
-                  </div>
-                <% end %>
-              </div>
-            </div>
+      <div
+        id={@panel_id}
+        class={[
+          "absolute left-0 top-full mt-1 z-40 w-64 max-h-72 overflow-y-scroll rounded-md border border-base-300 bg-base-100 shadow-lg divide-y divide-base-200",
+          !@show_options && "hidden"
+        ]}
+      >
+        <div :for={item <- @unselected} class="py-1">
+          <div class="px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
+            {item.name}
           </div>
+          <button
+            :for={key <- item.keys}
+            id={Helpers.normalize_id("#{@id}-#{item.name}-#{key}-add-item")}
+            type="button"
+            phx-click="multi-select-add-item"
+            phx-value-key={key}
+            phx-value-item={item.name}
+            class={[
+              "w-full flex items-center px-3 py-1 text-left text-xs border-l-2 hover:bg-base-200",
+              highlighted?(key, item.unselected_highlight) && "border-success",
+              !highlighted?(key, item.unselected_highlight) && "border-transparent"
+            ]}
+          >
+            <span class="truncate text-base-content">{key}</span>
+          </button>
         </div>
       </div>
     </div>
     """
   end
 
-  defp border_item_color("services"), do: "border-teal-300"
-  defp border_item_color("apps"), do: "border-blue-400"
-  defp border_item_color("metrics"), do: "border-orange-400"
-  # coveralls-ignore-start
-  defp border_item_color(_), do: "border-gray-300"
-  # coveralls-ignore-stop
-
-  defp bg_item_color("services"), do: "bg-teal-50"
-  defp bg_item_color("apps"), do: "bg-blue-50"
-  defp bg_item_color("metrics"), do: "bg-orange-50"
-  # coveralls-ignore-start
-  defp bg_item_color(_), do: "bg-gray-50"
-  # coveralls-ignore-stop
-
-  defp text_item_color("services"), do: "text-teal-700"
-  defp text_item_color("apps"), do: "text-blue-700"
-  defp text_item_color("metrics"), do: "text-orange-700"
-  # coveralls-ignore-start
-  defp text_item_color(_), do: "text-teal-700"
-  # coveralls-ignore-stop
-
-  defp unselected_highlight_color(key, unselected_highlight) do
-    if key in unselected_highlight do
-      "text-gray-700 dark:text-white bg-green-100 dark:bg-transparent border border-green-300"
-    else
-      "text-gray-700 dark:text-white bg-gray-100 dark:bg-transparent border border-gray-300"
-    end
-  end
+  defp highlighted?(key, unselected_highlight), do: key in unselected_highlight
 end

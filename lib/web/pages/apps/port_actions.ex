@@ -16,7 +16,7 @@ defmodule Observer.Web.Apps.PortActions do
 
   def content(assigns) do
     ~H"""
-    <div class="text-sm text-center block rounded bg-white dark:bg-gray-800 border border-solid border-blueGray-100 shadow-secondary-1 text-surface">
+    <div class="text-sm text-center block rounded bg-base-100 border border-solid border-base-300 shadow-secondary-1 text-surface">
       <div class="font-mono font-semibold border-b-1 rounded-t border-neutral-100 px-6 py-1 bg-zinc-200 dark:bg-zinc-500">
         Port Actions
       </div>
@@ -29,7 +29,7 @@ defmodule Observer.Web.Apps.PortActions do
             phx-value-action="kill"
             disabled={not Resolver.can?(:close_port, @access)}
             class={
-              "flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm font-semibold rounded-lg border border-gray-300 dark:border-gray-600 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip " <>
+              "flex items-center justify-center gap-2 px-4 py-2 bg-base-200 hover:bg-base-300 text-base-content text-sm font-semibold rounded-lg border border-base-300 shadow-sm hover:shadow transition-all duration-200 active:scale-95 tooltip " <>
                 Core.gated_classes()
             }
             title="Close the selected port"
@@ -50,18 +50,17 @@ defmodule Observer.Web.Apps.PortActions do
           class="sr-only peer"
           checked={@memory_monitor}
         />
-        <div class="relative w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-focus:ring-4 peer-focus:ring-teal-300 dark:peer-focus:ring-teal-800 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600 dark:peer-checked:bg-teal-600">
+        <div class="relative w-11 h-6 bg-base-300 rounded-full peer peer-focus:ring-4 peer-focus:ring-primary/30 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-base-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary">
         </div>
         <span class="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">Memory Monitor</span>
       </label>
 
       <div>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 italic">
-          Node: <span class="font-mono text-gray-700 dark:text-gray-200">{@node}</span>
+        <p class="text-xs text-muted mt-3 italic">
+          Node: <span class="font-mono text-base-content">{@node}</span>
         </p>
-        <p class="text-xs text-gray-500 dark:text-gray-400 p-1 italic">
-          Port ID:
-          <span class="font-mono text-gray-600 dark:text-gray-300">{port_info(@node, @id)}</span>
+        <p class="text-xs text-muted p-1 italic">
+          Port ID: <span class="font-mono text-base-content">{port_info(@node, @id)}</span>
         </p>
       </div>
     </div>
