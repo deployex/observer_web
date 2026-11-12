@@ -43,6 +43,62 @@ defmodule Observer.Web.Network.PageLiveTest do
     end)
   end
 
+  test "Search filters the Inet Ports and Sockets tables independently", %{conn: conn} do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true])
+    {:ok, listen_port_number} = :inet.port(listen)
+    {:ok, client} = :gen_tcp.connect(~c"localhost", listen_port_number, [:binary, active: false])
+    {:ok, accepted} = :gen_tcp.accept(listen, 1_000)
+
+    {:ok, nif_socket} = :socket.open(:inet, :stream, :tcp)
+
+    :ok =
+      :socket.connect(nif_socket, %{family: :inet, addr: {127, 0, 0, 1}, port: listen_port_number})
+
+    {:ok, index_live, _html} = live(conn, "/observer/network")
+
+    :timer.sleep(50)
+    render(index_live)
+
+    # Matches the Inet Ports table (driver name) but no socket's kind/domain/type/protocol
+    index_live
+    |> element("#network-update-form")
+    |> render_change(%{
+      service: to_string(Node.self()),
+      sort_by: "total",
+      refresh_seconds: "0",
+      search: "tcp_inet"
+    })
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "Showing:"
+    assert html =~ "127.0.0.1:#{listen_port_number}"
+    assert html =~ "No `socket` module sockets on this service."
+
+    # Matches the Sockets table (domain) but no port's name/owner/local/remote/port
+    index_live
+    |> element("#network-update-form")
+    |> render_change(%{
+      service: to_string(Node.self()),
+      sort_by: "total",
+      refresh_seconds: "0",
+      search: ":inet"
+    })
+
+    :timer.sleep(50)
+
+    assert render(index_live) =~ "No inet ports on this service."
+
+    :socket.close(nif_socket)
+    :gen_tcp.close(client)
+    :gen_tcp.close(accepted)
+    :gen_tcp.close(listen)
+  end
+
   test "DETAILS opens and closes the port drill-down panel", %{conn: conn} do
     RpcStubber.defaults()
     TelemetryStubber.defaults()
