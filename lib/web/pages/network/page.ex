@@ -53,6 +53,8 @@ defmodule Observer.Web.Network.Page do
             label="Refresh"
             options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
           />
+
+          <Core.input field={@form[:search]} type="text" label="Search" phx-debounce="300" />
         </.form>
 
         <button
@@ -77,8 +79,11 @@ defmodule Observer.Web.Network.Page do
         </div>
 
         <div :if={@rows != nil} class="bg-base-100 w-full shadow-lg rounded mb-4">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
+          <h2 class="px-4 pt-2 flex items-center gap-2 text-sm font-semibold text-base-content">
             Inet Ports
+            <span :if={search_active?(@form)} class={Core.badge_class(:neutral)}>
+              Showing: {length(@rows)}
+            </span>
           </h2>
           <div :if={@rows == []} class="p-4 text-xs text-muted">
             No inet ports on this service.
@@ -108,8 +113,11 @@ defmodule Observer.Web.Network.Page do
         </div>
 
         <div :if={@sockets != nil} class="bg-base-100 w-full shadow-lg rounded">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
+          <h2 class="px-4 pt-2 flex items-center gap-2 text-sm font-semibold text-base-content">
             Sockets (NIF)
+            <span :if={search_active?(@form)} class={Core.badge_class(:neutral)}>
+              Showing: {length(@sockets)}
+            </span>
           </h2>
           <div :if={@sockets == []} class="p-4 text-xs text-muted">
             No `socket` module sockets on this service.
@@ -306,8 +314,12 @@ defmodule Observer.Web.Network.Page do
     %{form: form, previous_counters: previous_counters, details: details} = socket.assigns
 
     sort_by = sort_by_atom(form.params["sort_by"])
+    search = String.downcase(form.params["search"] || "")
 
-    rows = Network.rank_ports(ports, sort_by, 250, previous_counters)
+    rows =
+      ports
+      |> filter_ports(search)
+      |> Network.rank_ports(sort_by, 250, previous_counters)
 
     details =
       if details do
@@ -316,10 +328,37 @@ defmodule Observer.Web.Network.Page do
 
     socket
     |> assign(:rows, rows)
-    |> assign(:sockets, Enum.sort_by(sockets, &(&1.read_bytes + &1.write_bytes), :desc))
+    |> assign(
+      :sockets,
+      sockets |> filter_sockets(search) |> Enum.sort_by(&(&1.read_bytes + &1.write_bytes), :desc)
+    )
     |> assign(:previous_counters, Network.counters_by_port(ports))
     |> assign(:details, details)
     |> assign(:sample_error, nil)
+  end
+
+  defp filter_ports(ports, ""), do: ports
+
+  defp filter_ports(ports, search) do
+    Enum.filter(ports, fn row ->
+      String.contains?(String.downcase(row.name), search) or
+        String.contains?(String.downcase(row.owner_label), search) or
+        String.contains?(String.downcase(row.local), search) or
+        String.contains?(String.downcase(row.remote), search) or
+        String.contains?(String.downcase(inspect(row.port)), search)
+    end)
+  end
+
+  defp filter_sockets(sockets, ""), do: sockets
+
+  defp filter_sockets(sockets, search) do
+    Enum.filter(sockets, fn row ->
+      String.contains?(String.downcase(row.id_str), search) or
+        String.contains?(String.downcase(inspect(row.kind)), search) or
+        String.contains?(String.downcase(inspect(row.domain)), search) or
+        String.contains?(String.downcase(inspect(row.type)), search) or
+        String.contains?(String.downcase(inspect(row.protocol)), search)
+    end)
   end
 
   defp details_rows(details) do
@@ -363,9 +402,12 @@ defmodule Observer.Web.Network.Page do
     %{
       "service" => to_string(Node.self()),
       "sort_by" => "total",
-      "refresh_seconds" => "5"
+      "refresh_seconds" => "5",
+      "search" => ""
     }
   end
+
+  defp search_active?(form), do: (form.params["search"] || "") != ""
 
   defp format_bytes(bytes) when bytes >= 1_073_741_824,
     do: "#{Float.round(bytes / 1_073_741_824, 1)} GB"

@@ -73,132 +73,140 @@ defmodule Observer.Web.System.Page do
           </span>
         </div>
 
-        <div :if={@limits != []} class="bg-base-100 w-full shadow-lg rounded mb-4">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
-            Limits
-          </h2>
-          <Core.table_tracing id="system-limits" rows={@limits}>
-            <:col :let={limit} label="RESOURCE">{limit.name}</:col>
-            <:col :let={limit} label="COUNT">{limit.count}</:col>
-            <:col :let={limit} label="LIMIT">{limit.limit}</:col>
-            <:col :let={limit} label="USED">
-              <div class="flex items-center gap-2">
-                <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
-                  <div
-                    class={["h-2 rounded", usage_color(limit.percent)]}
-                    style={"width: #{min(limit.percent, 100)}%"}
-                  />
-                </div>
-                <span>{limit.percent}%</span>
-              </div>
-            </:col>
-          </Core.table_tracing>
-        </div>
+        <div class="flex flex-col lg:flex-row gap-4 mb-4 items-start">
+          <div class="flex flex-col gap-4 flex-1 w-full min-w-0">
+            <div :if={@limits != []} class="bg-base-100 w-full shadow-lg rounded">
+              <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
+                Limits
+              </h2>
+              <Core.table_tracing id="system-limits" rows={@limits}>
+                <:col :let={limit} label="RESOURCE">{limit.name}</:col>
+                <:col :let={limit} label="COUNT">{limit.count}</:col>
+                <:col :let={limit} label="LIMIT">{limit.limit}</:col>
+                <:col :let={limit} label="USED">
+                  <div class="flex items-center gap-2">
+                    <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
+                      <div
+                        class={["h-2 rounded", usage_color(limit.percent)]}
+                        style={"width: #{min(limit.percent, 100)}%"}
+                      />
+                    </div>
+                    <span>{limit.percent}%</span>
+                  </div>
+                </:col>
+              </Core.table_tracing>
+            </div>
 
-        <div
-          :if={@os_data == :os_mon_not_started}
-          class="p-4 mb-4 text-sm text-muted"
-        >
-          Operating system data (load averages, CPU, OS memory and disks) requires the
-          <span class="font-mono font-semibold">:os_mon</span>
-          application on the selected service. Add
-          <span class="font-mono font-semibold">:os_mon</span>
-          to your <span class="font-mono font-semibold">extra_applications</span>
-          to enable it.
-        </div>
-
-        <div :if={is_map(@os_data)} class="bg-base-100 w-full shadow-lg rounded mb-4">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
-            Operating System
-          </h2>
-
-          <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
-            <span
-              :if={@os_data.os}
-              class={Core.badge_class()}
-            >
-              OS: {@os_data.os}
-            </span>
-            <span
-              :for={
-                {label, value} <-
-                  if(@os_data.load,
-                    do: [
-                      {"Load 1m", @os_data.load.avg1},
-                      {"Load 5m", @os_data.load.avg5},
-                      {"Load 15m", @os_data.load.avg15}
-                    ],
-                    else: []
-                  )
-              }
-              class={Core.badge_class()}
-            >
-              {label}: {value}
-            </span>
-          </div>
-
-          <div :if={@os_data.memory} class="px-4 pb-2 text-xs text-base-content">
-            <div class="flex items-center gap-2">
-              <span class="font-semibold">OS Memory</span>
-              <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
-                <div
-                  class={["h-2 rounded", usage_color(@os_data.memory.used_percent)]}
-                  style={"width: #{min(@os_data.memory.used_percent, 100)}%"}
-                />
-              </div>
-              <span>
-                {@os_data.memory.used_percent}% of {format_bytes(@os_data.memory.total_bytes)} used ({format_bytes(
-                  @os_data.memory.available_bytes
-                )} available)
-              </span>
+            <div :if={@allocators != []} class="bg-base-100 w-full shadow-lg rounded">
+              <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
+                Memory Allocators
+              </h2>
+              <Core.table_tracing id="system-allocators" rows={@allocators}>
+                <:col :let={alloc} label="ALLOCATOR">{alloc.name}</:col>
+                <:col :let={alloc} label="BLOCKS SIZE">{format_bytes(alloc.blocks_size)}</:col>
+                <:col :let={alloc} label="CARRIERS SIZE">{format_bytes(alloc.carriers_size)}</:col>
+                <:col :let={alloc} label="UTILIZATION">
+                  <span :if={alloc.utilization_percent}>{alloc.utilization_percent}%</span>
+                  <span :if={alloc.utilization_percent == nil}>-</span>
+                </:col>
+              </Core.table_tracing>
             </div>
           </div>
 
-          <Core.table_tracing :if={@os_data.cpus != []} id="system-os-cpus" rows={@os_data.cpus}>
-            <:col :let={cpu} label="CPU">{cpu.id}</:col>
-            <:col :let={cpu} label="UTILIZATION">
+          <div
+            :if={@os_data == :os_mon_not_started}
+            class="flex-1 w-full min-w-0 p-4 text-sm text-muted bg-base-100 shadow-lg rounded"
+          >
+            Operating system data (load averages, CPU, OS memory and disks) requires the
+            <span class="font-mono font-semibold">:os_mon</span>
+            application on the selected service. Add
+            <span class="font-mono font-semibold">:os_mon</span>
+            to your <span class="font-mono font-semibold">extra_applications</span>
+            to enable it.
+          </div>
+
+          <div :if={is_map(@os_data)} class="bg-base-100 flex-1 w-full min-w-0 shadow-lg rounded">
+            <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
+              Operating System
+            </h2>
+
+            <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
+              <span
+                :if={@os_data.os}
+                class={Core.badge_class()}
+              >
+                OS: {@os_data.os}
+              </span>
+              <span
+                :for={
+                  {label, value} <-
+                    if(@os_data.load,
+                      do: [
+                        {"Load 1m", @os_data.load.avg1},
+                        {"Load 5m", @os_data.load.avg5},
+                        {"Load 15m", @os_data.load.avg15}
+                      ],
+                      else: []
+                    )
+                }
+                class={Core.badge_class()}
+              >
+                {label}: {value}
+              </span>
+            </div>
+
+            <div :if={@os_data.memory} class="px-4 pb-2 text-xs text-base-content">
               <div class="flex items-center gap-2">
+                <span class="font-semibold">OS Memory</span>
                 <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
                   <div
-                    class={["h-2 rounded", usage_color(cpu.busy_percent)]}
-                    style={"width: #{min(cpu.busy_percent, 100)}%"}
+                    class={["h-2 rounded", usage_color(@os_data.memory.used_percent)]}
+                    style={"width: #{min(@os_data.memory.used_percent, 100)}%"}
                   />
                 </div>
-                <span>{cpu.busy_percent}%</span>
+                <span>
+                  {@os_data.memory.used_percent}% of {format_bytes(@os_data.memory.total_bytes)} used ({format_bytes(
+                    @os_data.memory.available_bytes
+                  )} available)
+                </span>
               </div>
-            </:col>
-          </Core.table_tracing>
+            </div>
 
-          <Core.table_tracing :if={@os_data.disks != []} id="system-os-disks" rows={@os_data.disks}>
-            <:col :let={disk} label="DISK">{disk.mount}</:col>
-            <:col :let={disk} label="SIZE">{format_bytes(disk.total_kbytes * 1_024)}</:col>
-            <:col :let={disk} label="USED">
-              <div class="flex items-center gap-2">
-                <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
-                  <div
-                    class={["h-2 rounded", usage_color(disk.capacity_percent)]}
-                    style={"width: #{min(disk.capacity_percent, 100)}%"}
-                  />
+            <Core.table_tracing :if={@os_data.cpus != []} id="system-os-cpus" rows={@os_data.cpus}>
+              <:col :let={cpu} label="CPU">{cpu.id}</:col>
+              <:col :let={cpu} label="UTILIZATION">
+                <div class="flex items-center gap-2">
+                  <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
+                    <div
+                      class={["h-2 rounded", usage_color(cpu.busy_percent)]}
+                      style={"width: #{min(cpu.busy_percent, 100)}%"}
+                    />
+                  </div>
+                  <span>{cpu.busy_percent}%</span>
                 </div>
-                <span>{disk.capacity_percent}%</span>
-              </div>
-            </:col>
-          </Core.table_tracing>
-        </div>
+              </:col>
+            </Core.table_tracing>
 
-        <div :if={@allocators != []} class="bg-base-100 w-full shadow-lg rounded">
-          <h2 class="px-4 pt-2 text-sm font-semibold text-base-content">
-            Memory Allocators
-          </h2>
-          <Core.table_tracing id="system-allocators" rows={@allocators}>
-            <:col :let={alloc} label="ALLOCATOR">{alloc.name}</:col>
-            <:col :let={alloc} label="BLOCKS SIZE">{format_bytes(alloc.blocks_size)}</:col>
-            <:col :let={alloc} label="CARRIERS SIZE">{format_bytes(alloc.carriers_size)}</:col>
-            <:col :let={alloc} label="UTILIZATION">
-              <span :if={alloc.utilization_percent}>{alloc.utilization_percent}%</span>
-              <span :if={alloc.utilization_percent == nil}>-</span>
-            </:col>
-          </Core.table_tracing>
+            <Core.table_tracing
+              :if={@os_data.disks != []}
+              id="system-os-disks"
+              rows={@os_data.disks}
+            >
+              <:col :let={disk} label="DISK">{disk.mount}</:col>
+              <:col :let={disk} label="SIZE">{format_bytes(disk.total_kbytes * 1_024)}</:col>
+              <:col :let={disk} label="USED">
+                <div class="flex items-center gap-2">
+                  <div class="w-40 h-2 rounded bg-base-300 overflow-hidden">
+                    <div
+                      class={["h-2 rounded", usage_color(disk.capacity_percent)]}
+                      style={"width: #{min(disk.capacity_percent, 100)}%"}
+                    />
+                  </div>
+                  <span>{disk.capacity_percent}%</span>
+                </div>
+              </:col>
+            </Core.table_tracing>
+          </div>
         </div>
       </div>
     </div>
