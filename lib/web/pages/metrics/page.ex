@@ -8,7 +8,6 @@ defmodule Observer.Web.Metrics.Page do
   use Observer.Web, :live_component
 
   alias Observer.Web.Components.Core
-  alias Observer.Web.Components.Icons
   alias Observer.Web.Components.Metrics.Phoenix, as: MetricsPhoenix
   alias Observer.Web.Components.Metrics.PhxLvSocket
   alias Observer.Web.Components.Metrics.VmLimits
@@ -18,6 +17,7 @@ defmodule Observer.Web.Metrics.Page do
   alias Observer.Web.Components.Metrics.VmRunQueue
   alias Observer.Web.Components.Metrics.VmSchedulerUtilization
   alias Observer.Web.Components.MultiSelect
+  alias Observer.Web.Components.SettingsPanel
   alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.Telemetry
@@ -73,67 +73,40 @@ defmodule Observer.Web.Metrics.Page do
           show_options={@show_metric_options}
         />
 
-        <div
-          id="metrics-settings-wrap"
-          class="relative inline-flex shrink-0"
-          phx-click-away={JS.hide(to: "#metrics-settings-panel")}
-          phx-window-keydown={JS.hide(to: "#metrics-settings-panel")}
-          phx-key="escape"
-        >
-          <button
-            type="button"
-            id="metrics-settings-toggle"
-            title="Metrics settings"
-            aria-label="Metrics settings"
-            phx-click={
-              JS.toggle(
-                to: "#metrics-settings-panel",
-                in: "ease-in duration-150",
-                out: "ease-out duration-100"
-              )
-            }
-            class="inline-flex items-center gap-x-1 text-xs font-semibold text-muted hover:text-base-content border border-base-300 rounded px-2 py-1"
+        <SettingsPanel.content id="metrics-settings" label="Metrics settings">
+          <.form
+            for={@form}
+            id="metrics-update-form"
+            class="flex flex-col gap-y-2 text-xs text-left text-base-content"
+            phx-change="form-update"
           >
-            Settings <Icons.chevron_down class="w-3 h-3" />
-          </button>
-          <div
-            id="metrics-settings-panel"
-            class="hidden absolute left-full top-0 ml-2 z-40 w-56 rounded-md shadow-lg bg-base-100 border border-base-300 p-3"
-          >
-            <.form
-              for={@form}
-              id="metrics-update-form"
-              class="flex flex-col gap-y-2 text-xs text-left text-base-content"
-              phx-change="form-update"
-            >
-              <Core.input
-                field={@form[:num_cols]}
-                type="select"
-                label="Column Size"
-                options={["1", "2", "3", "4"]}
-              />
-              <Core.input
-                field={@form[:start_time]}
-                type="select"
-                label="Start Time"
-                options={["1m", "5m", "15m", "30m", "1h", "6h", "12h", "1d", "3d", "1w"]}
-              />
+            <Core.input
+              field={@form[:num_cols]}
+              type="select"
+              label="Column Size"
+              options={["1", "2", "3", "4"]}
+            />
+            <Core.input
+              field={@form[:start_time]}
+              type="select"
+              label="Start Time"
+              options={["1m", "5m", "15m", "30m", "1h", "6h", "12h", "1d", "3d", "1w"]}
+            />
 
-              <div>
-                <Core.label>Mode</Core.label>
-                <button
-                  type="button"
-                  class={[
-                    "#{@mode_color}",
-                    "font-medium rounded-lg text-sm mt-2 px-5 py-2 text-center"
-                  ]}
-                >
-                  {@mode}
-                </button>
-              </div>
-            </.form>
-          </div>
-        </div>
+            <div>
+              <Core.label>Mode</Core.label>
+              <button
+                type="button"
+                class={[
+                  "#{@mode_color}",
+                  "font-medium rounded-lg text-sm mt-2 px-5 py-2 text-center"
+                ]}
+              >
+                {@mode}
+              </button>
+            </div>
+          </.form>
+        </SettingsPanel.content>
       </Toolbar.content>
       <div class="bg-base-100">
         <div class="p-2">

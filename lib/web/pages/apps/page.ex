@@ -13,8 +13,9 @@ defmodule Observer.Web.Apps.Page do
   alias Observer.Web.Apps.Process
   alias Observer.Web.Components.Confirm
   alias Observer.Web.Components.Core
-  alias Observer.Web.Components.Icons
+  alias Observer.Web.Components.DetailsPanel
   alias Observer.Web.Components.MultiSelect
+  alias Observer.Web.Components.SettingsPanel
   alias Observer.Web.Components.Toolbar
   alias Observer.Web.Helpers
   alias Observer.Web.Page
@@ -40,11 +41,11 @@ defmodule Observer.Web.Apps.Page do
     ~H"""
     <div class={[
       "min-h-screen bg-base-100",
-      @current_selected_id.id_string && @identifier_panel_collapsed && "pb-16",
-      @current_selected_id.id_string && !@identifier_panel_collapsed && !@identifier_panel_expanded &&
-        "pb-[70vh]",
-      @current_selected_id.id_string && !@identifier_panel_collapsed && @identifier_panel_expanded &&
-        "pb-[92vh]"
+      DetailsPanel.padding_class(
+        !!@current_selected_id.id_string,
+        @identifier_panel_collapsed,
+        @identifier_panel_expanded
+      )
     ]}>
       <Toolbar.content>
         <MultiSelect.content
@@ -61,61 +62,34 @@ defmodule Observer.Web.Apps.Page do
           show_options={@show_observer_options}
         />
 
-        <div
-          id="apps-settings-wrap"
-          class="relative inline-flex shrink-0"
-          phx-click-away={JS.hide(to: "#apps-settings-panel")}
-          phx-window-keydown={JS.hide(to: "#apps-settings-panel")}
-          phx-key="escape"
-        >
-          <button
-            type="button"
-            id="apps-settings-toggle"
-            title="Tree settings"
-            aria-label="Tree settings"
-            phx-click={
-              JS.toggle(
-                to: "#apps-settings-panel",
-                in: "ease-in duration-150",
-                out: "ease-out duration-100"
-              )
-            }
-            class="inline-flex items-center gap-x-1 text-xs font-semibold text-muted hover:text-base-content border border-base-300 rounded px-2 py-1"
+        <SettingsPanel.content id="apps-settings" label="Tree settings">
+          <.form
+            for={@form}
+            id="apps-update-form"
+            class="flex flex-col gap-y-2 text-xs text-left text-base-content"
+            phx-change="form-update"
           >
-            Settings <Icons.chevron_down class="w-3 h-3" />
-          </button>
-          <div
-            id="apps-settings-panel"
-            class="hidden absolute left-full top-0 ml-2 z-40 w-56 rounded-md shadow-lg bg-base-100 border border-base-300 p-3"
-          >
-            <.form
-              for={@form}
-              id="apps-update-form"
-              class="flex flex-col gap-y-2 text-xs text-left text-base-content"
-              phx-change="form-update"
-            >
-              <Core.input
-                field={@form[:initial_tree_depth]}
-                type="number"
-                step="1"
-                min="-1"
-                label="Initial Depth"
-              />
-              <Core.input
-                field={@form[:get_state_timeout]}
-                type="number"
-                step="100"
-                min="100"
-                label="State Timeout (ms)"
-              />
-            </.form>
-          </div>
-        </div>
+            <Core.input
+              field={@form[:initial_tree_depth]}
+              type="number"
+              step="1"
+              min="-1"
+              label="Initial Depth"
+            />
+            <Core.input
+              field={@form[:get_state_timeout]}
+              type="number"
+              step="100"
+              min="100"
+              label="State Timeout (ms)"
+            />
+          </.form>
+        </SettingsPanel.content>
 
         <button
           id="apps-multi-select-update"
           phx-click="apps-apps-update"
-          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+          class={Core.action_button_class()}
         >
           UPDATE
         </button>
@@ -166,75 +140,23 @@ defmodule Observer.Web.Apps.Page do
           </div>
         </div>
         <% data_key = data_key(@current_selected_id.node, @current_selected_id.metric) %>
-        <div
+        <DetailsPanel.content
           :if={@current_selected_id.id_string}
           id="apps-identifier-panel"
-          phx-mounted={
-            JS.transition(
-              {"transition-transform duration-300 ease-out", "translate-y-full", "translate-y-0"}
-            )
-          }
-          class={[
-            "fixed inset-x-0 bottom-0 z-30 flex flex-col bg-base-100 border-t border-base-300 shadow-2xl",
-            @identifier_panel_expanded && "max-h-[92vh]",
-            !@identifier_panel_expanded && "max-h-[70vh]"
-          ]}
+          expand_id="apps-identifier-panel-expand"
+          collapse_id="apps-identifier-panel-collapse"
+          close_id="apps-identifier-panel-close"
+          collapsed={@identifier_panel_collapsed}
+          expanded={@identifier_panel_expanded}
+          expand_event="toggle-identifier-panel-expand"
+          collapse_event="toggle-identifier-panel-collapse"
+          close_event="close-identifier-panel"
         >
-          <div class="flex items-center justify-between px-4 py-2 border-b border-base-300 shrink-0">
-            <h2 class="text-sm font-semibold text-base-content">
-              {if @current_selected_id.type == "pid", do: "Process", else: "Port"} details - {@current_selected_id.id_string}
-            </h2>
-            <div class="flex items-center gap-x-3">
-              <button
-                :if={not @identifier_panel_collapsed}
-                id="apps-identifier-panel-expand"
-                type="button"
-                aria-label={
-                  if @identifier_panel_expanded,
-                    do: "Shrink details panel",
-                    else: "Expand details panel"
-                }
-                title={if @identifier_panel_expanded, do: "Shrink", else: "Expand"}
-                phx-click="toggle-identifier-panel-expand"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <%= if @identifier_panel_expanded do %>
-                  <Icons.arrows_pointing_in class="w-5 h-5" />
-                <% else %>
-                  <Icons.arrows_pointing_out class="w-5 h-5" />
-                <% end %>
-              </button>
-              <button
-                id="apps-identifier-panel-collapse"
-                type="button"
-                aria-label={
-                  if @identifier_panel_collapsed,
-                    do: "Restore details panel",
-                    else: "Minimize details panel"
-                }
-                title={if @identifier_panel_collapsed, do: "Restore", else: "Minimize"}
-                phx-click="toggle-identifier-panel-collapse"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <%= if @identifier_panel_collapsed do %>
-                  <Icons.chevron_up class="w-5 h-5" />
-                <% else %>
-                  <Icons.chevron_down class="w-5 h-5" />
-                <% end %>
-              </button>
-              <button
-                id="apps-identifier-panel-close"
-                type="button"
-                aria-label="Close details panel"
-                title="Close"
-                phx-click="close-identifier-panel"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <Icons.x_mark class="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div :if={not @identifier_panel_collapsed} class="overflow-y-auto p-2">
+          <:title>
+            {if @current_selected_id.type == "pid", do: "Process", else: "Port"} details - {@current_selected_id.id_string}
+          </:title>
+
+          <div class="p-2">
             <%= if @current_selected_id.type == "pid" do %>
               <Process.content
                 id={@current_selected_id.id_string}
@@ -258,7 +180,7 @@ defmodule Observer.Web.Apps.Page do
               />
             <% end %>
           </div>
-        </div>
+        </DetailsPanel.content>
       </div>
 
       <%= if @selected_id_action_confirmation do %>
@@ -544,7 +466,11 @@ defmodule Observer.Web.Apps.Page do
   end
 
   def handle_parent_event("close-identifier-panel", _value, socket) do
-    {:noreply, assign(socket, :current_selected_id, %Identifier{})}
+    {:noreply,
+     socket
+     |> assign(:current_selected_id, %Identifier{})
+     |> assign(:identifier_panel_collapsed, false)
+     |> assign(:identifier_panel_expanded, false)}
   end
 
   def handle_parent_event("toggle-identifier-panel-collapse", _value, socket) do
@@ -761,6 +687,15 @@ defmodule Observer.Web.Apps.Page do
         %{assigns: %{current_selected_id: current_selected_id, form: form}} = socket
       ) do
     if request_process_info?(current_selected_id, request_id) do
+      socket =
+        if current_selected_id.id_string != request_id do
+          socket
+          |> assign(:identifier_panel_collapsed, false)
+          |> assign(:identifier_panel_expanded, false)
+        else
+          socket
+        end
+
       fetch_process_info(socket, request_id, series_name, form)
     else
       # NOTE: Throttling for the currently selected id, since tooltips are

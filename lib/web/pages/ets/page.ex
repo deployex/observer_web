@@ -11,7 +11,7 @@ defmodule Observer.Web.Ets.Page do
   use Observer.Web, :live_component
 
   alias Observer.Web.Components.Core
-  alias Observer.Web.Components.Icons
+  alias Observer.Web.Components.DetailsPanel
   alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.Ets
@@ -24,9 +24,7 @@ defmodule Observer.Web.Ets.Page do
     ~H"""
     <div class={[
       "min-h-screen bg-base-100",
-      @details && @details_panel_collapsed && "pb-16",
-      @details && !@details_panel_collapsed && !@details_panel_expanded && "pb-[70vh]",
-      @details && !@details_panel_collapsed && @details_panel_expanded && "pb-[92vh]"
+      DetailsPanel.padding_class(!!@details, @details_panel_collapsed, @details_panel_expanded)
     ]}>
       <Toolbar.content>
         <.form
@@ -57,7 +55,7 @@ defmodule Observer.Web.Ets.Page do
         <button
           id="ets-refresh"
           phx-click="ets-refresh"
-          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+          class={Core.action_button_class()}
         >
           REFRESH
         </button>
@@ -85,15 +83,15 @@ defmodule Observer.Web.Ets.Page do
         </div>
 
         <div :if={@tables} class="flex flex-wrap gap-2 px-2 pb-2 text-xs">
-          <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
+          <span class={Core.badge_class()}>
             Tables: {length(@tables)}
           </span>
-          <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
+          <span class={Core.badge_class()}>
             Total memory: {format_bytes(Enum.sum(Enum.map(@tables, & &1.memory)))}
           </span>
           <span
             :if={@rows != nil and length(@rows) != length(@tables)}
-            class="px-2 py-1 rounded-full bg-base-200 border border-base-300 text-base-content"
+            class={Core.badge_class(:neutral)}
           >
             Showing: {length(@rows)}
           </span>
@@ -132,111 +130,56 @@ defmodule Observer.Web.Ets.Page do
           </Core.table_tracing>
         </div>
 
-        <div
+        <DetailsPanel.content
           :if={@details}
           id="ets-details-panel"
-          phx-mounted={
-            JS.transition(
-              {"transition-transform duration-300 ease-out", "translate-y-full", "translate-y-0"}
-            )
-          }
-          class={[
-            "fixed inset-x-0 bottom-0 z-30 flex flex-col bg-base-100 border-t border-base-300 shadow-2xl",
-            @details_panel_expanded && "max-h-[92vh]",
-            !@details_panel_expanded && "max-h-[70vh]"
-          ]}
+          expand_id="ets-details-panel-expand"
+          collapse_id="ets-details-panel-collapse"
+          close_id="ets-details-close"
+          collapsed={@details_panel_collapsed}
+          expanded={@details_panel_expanded}
+          expand_event="ets-details-panel-expand"
+          collapse_event="ets-details-panel-collapse"
+          close_event="ets-details-close"
         >
-          <div class="flex items-center justify-between px-4 py-2 border-b border-base-300 shrink-0">
-            <h2 class="text-sm font-semibold text-base-content">
-              Table {inspect(@details.table.name)}
-            </h2>
-            <div class="flex items-center gap-x-3">
-              <button
-                :if={not @details_panel_collapsed}
-                id="ets-details-panel-expand"
-                type="button"
-                aria-label={
-                  if @details_panel_expanded, do: "Shrink details panel", else: "Expand details panel"
-                }
-                title={if @details_panel_expanded, do: "Shrink", else: "Expand"}
-                phx-click="ets-details-panel-expand"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <%= if @details_panel_expanded do %>
-                  <Icons.arrows_pointing_in class="w-5 h-5" />
-                <% else %>
-                  <Icons.arrows_pointing_out class="w-5 h-5" />
-                <% end %>
-              </button>
-              <button
-                id="ets-details-panel-collapse"
-                type="button"
-                aria-label={
-                  if @details_panel_collapsed,
-                    do: "Restore details panel",
-                    else: "Minimize details panel"
-                }
-                title={if @details_panel_collapsed, do: "Restore", else: "Minimize"}
-                phx-click="ets-details-panel-collapse"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <%= if @details_panel_collapsed do %>
-                  <Icons.chevron_up class="w-5 h-5" />
-                <% else %>
-                  <Icons.chevron_down class="w-5 h-5" />
-                <% end %>
-              </button>
-              <button
-                id="ets-details-close"
-                type="button"
-                aria-label="Close details panel"
-                title="Close"
-                phx-click="ets-details-close"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <Icons.x_mark class="w-5 h-5" />
-              </button>
-            </div>
+          <:title>Table {inspect(@details.table.name)}</:title>
+
+          <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
+            <span
+              :for={{label, value} <- details_badges(@details.table, @source)}
+              class={Core.badge_class(:neutral)}
+            >
+              {label}: {value}
+            </span>
           </div>
 
-          <div :if={not @details_panel_collapsed} class="overflow-y-auto">
-            <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
-              <span
-                :for={{label, value} <- details_badges(@details.table, @source)}
-                class="px-2 py-1 rounded-full bg-base-200 border border-base-300 text-base-content"
-              >
-                {label}: {value}
-              </span>
-            </div>
-
-            <div
-              :if={@details.content == {:error, :content_inspection_disabled}}
-              class="px-4 pb-4 text-xs text-muted"
-            >
-              Content inspection is disabled. Table contents are live production data - to enable
-              bounded, read-only previews, set <code class="font-mono">config :observer_web, table_content_inspection: true</code>.
-            </div>
-
-            <div
-              :if={@details.content == {:error, :not_accessible}}
-              class="px-4 pb-4 text-xs text-muted"
-            >
-              This table's contents are not accessible (private table, or it no longer exists).
-            </div>
-
-            <div :if={match?({:ok, _}, @details.content)} class="px-4 pb-4">
-              <h3 class="text-xs font-semibold text-base-content pb-1">
-                First objects (bounded preview)
-              </h3>
-              <div :if={elem(@details.content, 1) == []} class="text-xs text-muted">
-                The table is empty.
-              </div>
-              <ul class="text-xs font-mono text-base-content space-y-1 break-all">
-                <li :for={object <- elem(@details.content, 1)}>{object}</li>
-              </ul>
-            </div>
+          <div
+            :if={@details.content == {:error, :content_inspection_disabled}}
+            class="px-4 pb-4 text-xs text-muted"
+          >
+            Content inspection is disabled. Table contents are live production data - to enable
+            bounded, read-only previews, set <code class="font-mono">config :observer_web, table_content_inspection: true</code>.
           </div>
-        </div>
+
+          <div
+            :if={@details.content == {:error, :not_accessible}}
+            class="px-4 pb-4 text-xs text-muted"
+          >
+            This table's contents are not accessible (private table, or it no longer exists).
+          </div>
+
+          <div :if={match?({:ok, _}, @details.content)} class="px-4 pb-4">
+            <h3 class="text-xs font-semibold text-base-content pb-1">
+              First objects (bounded preview)
+            </h3>
+            <div :if={elem(@details.content, 1) == []} class="text-xs text-muted">
+              The table is empty.
+            </div>
+            <ul class="text-xs font-mono text-base-content space-y-1 break-all">
+              <li :for={object <- elem(@details.content, 1)}>{object}</li>
+            </ul>
+          </div>
+        </DetailsPanel.content>
       </div>
     </div>
     """
@@ -325,12 +268,20 @@ defmodule Observer.Web.Ets.Page do
             :ets -> Ets.table_content(node, table.handle)
           end
 
-        {:noreply, assign(socket, :details, %{table: table, content: content})}
+        {:noreply,
+         socket
+         |> assign(:details, %{table: table, content: content})
+         |> assign(:details_panel_collapsed, false)
+         |> assign(:details_panel_expanded, false)}
     end
   end
 
   def handle_parent_event("ets-details-close", _params, socket) do
-    {:noreply, assign(socket, :details, nil)}
+    {:noreply,
+     socket
+     |> assign(:details, nil)
+     |> assign(:details_panel_collapsed, false)
+     |> assign(:details_panel_expanded, false)}
   end
 
   def handle_parent_event("ets-details-panel-collapse", _params, socket) do

@@ -551,4 +551,26 @@ defmodule Observer.Web.Components.Core do
   instead of each button hand-rolling its own `disabled:` utilities.
   """
   def gated_classes, do: "disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+
+  @doc """
+  Shared class string for a toolbar's primary CTA button (REFRESH/RUN/UPDATE), so every page's
+  button stays visually identical without retyping the same Tailwind string at each call site.
+  """
+  def action_button_class,
+    do:
+      "phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+
+  @doc """
+  Shared class string for a small stat/status pill. `tone` picks the color: `:info` (default),
+  `:warning`, or `:neutral`.
+  """
+  def badge_class(tone \\ :info)
+
+  def badge_class(:info), do: "px-2 py-1 rounded-full bg-info/10 border border-info text-info"
+
+  def badge_class(:warning),
+    do: "px-2 py-1 rounded-full bg-warning/10 border border-warning text-warning"
+
+  def badge_class(:neutral),
+    do: "px-2 py-1 rounded-full bg-base-200 border border-base-300 text-base-content"
 end

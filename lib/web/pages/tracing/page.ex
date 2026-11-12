@@ -9,9 +9,10 @@ defmodule Observer.Web.Tracing.Page do
 
   alias Observer.Web.Components.CopyToClipboard
   alias Observer.Web.Components.Core
-  alias Observer.Web.Components.Icons
   alias Observer.Web.Components.MultiSelectList
+  alias Observer.Web.Components.SettingsPanel
   alias Observer.Web.Components.Toolbar
+  alias Observer.Web.Helpers
   alias Observer.Web.Page
   alias Observer.Web.Resolver
   alias Observer.Web.Tracing.Selection
@@ -105,69 +106,39 @@ defmodule Observer.Web.Tracing.Page do
           form_search={@form_search}
         />
 
-        <div
-          id="tracing-settings-wrap"
-          class="relative inline-flex shrink-0"
-          phx-click-away={JS.hide(to: "#tracing-settings-panel")}
-          phx-window-keydown={JS.hide(to: "#tracing-settings-panel")}
-          phx-key="escape"
-        >
-          <button
-            type="button"
-            id="tracing-settings-toggle"
-            title="Tracing settings"
-            aria-label="Tracing settings"
-            phx-click={
-              JS.toggle(
-                to: "#tracing-settings-panel",
-                in: "ease-in duration-150",
-                out: "ease-out duration-100"
-              )
-            }
-            class="inline-flex items-center gap-x-1 text-xs font-semibold text-muted hover:text-base-content border border-base-300 rounded px-2 py-1"
+        <SettingsPanel.content id="tracing-settings" label="Tracing settings">
+          <.form
+            for={@form}
+            id="tracing-update-form"
+            class="flex flex-col gap-y-2 text-xs text-left text-base-content"
+            phx-change="form-update"
           >
-            Settings <Icons.chevron_down class="w-3 h-3" />
-          </button>
-          <div
-            id="tracing-settings-panel"
-            class="hidden absolute left-full top-0 ml-2 z-40 w-56 rounded-md shadow-lg bg-base-100 border border-base-300 p-3"
-          >
-            <.form
-              for={@form}
-              id="tracing-update-form"
-              class="flex flex-col gap-y-2 text-xs text-left text-base-content"
-              phx-change="form-update"
-            >
-              <Core.input
-                field={@form[:max_messages]}
-                type="number"
-                step="1"
-                min="1"
-                max="50"
-                label="Messages"
-              />
+            <Core.input
+              field={@form[:max_messages]}
+              type="number"
+              step="1"
+              min="1"
+              max="50"
+              label="Messages"
+            />
 
-              <Core.input
-                field={@form[:session_timeout_seconds]}
-                type="number"
-                step="15"
-                min="30"
-                max="300"
-                label="Timeout(s)"
-              />
-            </.form>
-          </div>
-        </div>
+            <Core.input
+              field={@form[:session_timeout_seconds]}
+              type="number"
+              step="15"
+              min="30"
+              max="300"
+              label="Timeout(s)"
+            />
+          </.form>
+        </SettingsPanel.content>
 
         <button
           :if={@trace_idle? and @trace_owner?}
           id="tracing-multi-select-run"
           phx-click="tracing-apps-run"
           disabled={not Resolver.can?(:start_trace, @access)}
-          class={
-            "phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75 " <>
-              Core.gated_classes()
-          }
+          class={Core.action_button_class() <> " " <> Core.gated_classes()}
         >
           RUN
         </button>
@@ -371,12 +342,7 @@ defmodule Observer.Web.Tracing.Page do
            |> assign(:trace_messages?, false)
            |> assign(:trace_message_count, 0)
            |> assign(:trace_max_messages, max_messages)
-           |> assign(
-             :trace_expires_at,
-             DateTime.utc_now()
-             |> DateTime.add(session_timeout_ms, :millisecond)
-             |> DateTime.to_iso8601()
-           )
+           |> assign(:trace_expires_at, Helpers.trace_expires_at(session_timeout_ms))
            |> stream(:tracing_messages, [], reset: true)}
 
         # coveralls-ignore-start

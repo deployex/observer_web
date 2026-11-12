@@ -12,9 +12,10 @@ defmodule Observer.Web.Profiling.Page do
   use Observer.Web, :live_component
 
   alias Observer.Web.Components.Core
-  alias Observer.Web.Components.Icons
   alias Observer.Web.Components.MultiSelectList
+  alias Observer.Web.Components.SettingsPanel
   alias Observer.Web.Components.Toolbar
+  alias Observer.Web.Helpers
   alias Observer.Web.Page
   alias Observer.Web.Resolver
   alias Observer.Web.Tracing.Selection
@@ -89,107 +90,77 @@ defmodule Observer.Web.Profiling.Page do
           form_search={@form_search}
         />
 
-        <div
-          id="profiling-settings-wrap"
-          class="relative inline-flex shrink-0"
-          phx-click-away={JS.hide(to: "#profiling-settings-panel")}
-          phx-window-keydown={JS.hide(to: "#profiling-settings-panel")}
-          phx-key="escape"
-        >
-          <button
-            type="button"
-            id="profiling-settings-toggle"
-            title="Profiling settings"
-            aria-label="Profiling settings"
-            phx-click={
-              JS.toggle(
-                to: "#profiling-settings-panel",
-                in: "ease-in duration-150",
-                out: "ease-out duration-100"
-              )
-            }
-            class="inline-flex items-center gap-x-1 text-xs font-semibold text-muted hover:text-base-content border border-base-300 rounded px-2 py-1"
+        <SettingsPanel.content id="profiling-settings" label="Profiling settings">
+          <.form
+            for={@form}
+            id="profiling-update-form"
+            class="flex flex-col gap-y-2 text-xs text-left text-base-content"
+            phx-change="form-update"
           >
-            Settings <Icons.chevron_down class="w-3 h-3" />
-          </button>
-          <div
-            id="profiling-settings-panel"
-            class="hidden absolute left-full top-0 ml-2 z-40 w-56 rounded-md shadow-lg bg-base-100 border border-base-300 p-3"
-          >
-            <.form
-              for={@form}
-              id="profiling-update-form"
-              class="flex flex-col gap-y-2 text-xs text-left text-base-content"
-              phx-change="form-update"
-            >
+            <Core.input
+              field={@form[:tool]}
+              type="select"
+              label="Tool"
+              options={[
+                {"Count", "count"},
+                {"Duration", "duration"},
+                {"Call Sequence", "call_seq"},
+                {"Flame Graph", "flame_graph"}
+              ]}
+            />
+
+            <Core.input
+              :if={@tool == "duration"}
+              field={@form[:aggregation]}
+              type="select"
+              label="Aggregation"
+              options={[
+                {"None (every call)", "none"},
+                {"Sum", "sum"},
+                {"Average", "avg"},
+                {"Min", "min"},
+                {"Max", "max"},
+                {"Distribution", "dist"}
+              ]}
+            />
+
+            <div :if={@tool == "flame_graph" and @report_matches_tool? and length(@report) > 1}>
               <Core.input
-                field={@form[:tool]}
+                field={@form[:flame_pid]}
                 type="select"
-                label="Tool"
-                options={[
-                  {"Count", "count"},
-                  {"Duration", "duration"},
-                  {"Call Sequence", "call_seq"},
-                  {"Flame Graph", "flame_graph"}
-                ]}
+                label="Process"
+                options={
+                  Enum.with_index(@report, fn entry, index -> {entry.name, to_string(index)} end)
+                }
               />
+            </div>
 
-              <Core.input
-                :if={@tool == "duration"}
-                field={@form[:aggregation]}
-                type="select"
-                label="Aggregation"
-                options={[
-                  {"None (every call)", "none"},
-                  {"Sum", "sum"},
-                  {"Average", "avg"},
-                  {"Min", "min"},
-                  {"Max", "max"},
-                  {"Distribution", "dist"}
-                ]}
-              />
+            <Core.input
+              field={@form[:max_messages]}
+              type="number"
+              step="1"
+              min="1"
+              max="10000"
+              label="Events"
+            />
 
-              <div :if={@tool == "flame_graph" and @report_matches_tool? and length(@report) > 1}>
-                <Core.input
-                  field={@form[:flame_pid]}
-                  type="select"
-                  label="Process"
-                  options={
-                    Enum.with_index(@report, fn entry, index -> {entry.name, to_string(index)} end)
-                  }
-                />
-              </div>
-
-              <Core.input
-                field={@form[:max_messages]}
-                type="number"
-                step="1"
-                min="1"
-                max="10000"
-                label="Events"
-              />
-
-              <Core.input
-                field={@form[:session_timeout_seconds]}
-                type="number"
-                step="15"
-                min="30"
-                max="300"
-                label="Timeout(s)"
-              />
-            </.form>
-          </div>
-        </div>
+            <Core.input
+              field={@form[:session_timeout_seconds]}
+              type="number"
+              step="15"
+              min="30"
+              max="300"
+              label="Timeout(s)"
+            />
+          </.form>
+        </SettingsPanel.content>
 
         <button
           :if={@trace_idle? and @trace_owner?}
           id="profiling-multi-select-run"
           phx-click="profiling-run"
           disabled={not Resolver.can?(:start_trace, @access)}
-          class={
-            "phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75 " <>
-              Core.gated_classes()
-          }
+          class={Core.action_button_class() <> " " <> Core.gated_classes()}
         >
           RUN
         </button>
@@ -395,12 +366,7 @@ defmodule Observer.Web.Profiling.Page do
            |> assign(:trace_session_id, session_id)
            |> assign(:report, nil)
            |> assign(:report_tool, tool_param)
-           |> assign(
-             :trace_expires_at,
-             DateTime.utc_now()
-             |> DateTime.add(session_timeout_ms, :millisecond)
-             |> DateTime.to_iso8601()
-           )}
+           |> assign(:trace_expires_at, Helpers.trace_expires_at(session_timeout_ms))}
 
         # coveralls-ignore-start
         {:error, _} ->

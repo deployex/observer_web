@@ -216,4 +216,16 @@ defmodule Observer.Web.Helpers do
     do: true
 
   defp literal_term?(ast), do: Macro.quoted_literal?(ast)
+
+  @doc """
+  Builds the ISO-8601 timestamp a tracing/profiling session expires at, `session_timeout_ms`
+  from now. Truncated to millisecond precision so the client's `new Date()` parse
+  (`assets/js/hooks/countdown.js`) stays within the ECMA-262 guaranteed format.
+  """
+  def trace_expires_at(session_timeout_ms) do
+    DateTime.utc_now()
+    |> DateTime.add(session_timeout_ms, :millisecond)
+    |> DateTime.truncate(:millisecond)
+    |> DateTime.to_iso8601()
+  end
 end

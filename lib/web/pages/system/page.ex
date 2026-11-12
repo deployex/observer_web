@@ -38,7 +38,7 @@ defmodule Observer.Web.System.Page do
         <button
           id="system-refresh"
           phx-click="system-refresh"
-          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+          class={Core.action_button_class()}
         >
           REFRESH
         </button>
@@ -67,7 +67,7 @@ defmodule Observer.Web.System.Page do
                 {"Uptime", format_uptime(@node_info.uptime_ms)}
               ]
             }
-            class="px-2 py-1 rounded-full bg-info/10 border border-info text-info"
+            class={Core.badge_class()}
           >
             {label}: {value}
           </span>
@@ -115,7 +115,7 @@ defmodule Observer.Web.System.Page do
           <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
             <span
               :if={@os_data.os}
-              class="px-2 py-1 rounded-full bg-info/10 border border-info text-info"
+              class={Core.badge_class()}
             >
               OS: {@os_data.os}
             </span>
@@ -131,7 +131,7 @@ defmodule Observer.Web.System.Page do
                     else: []
                   )
               }
-              class="px-2 py-1 rounded-full bg-info/10 border border-info text-info"
+              class={Core.badge_class()}
             >
               {label}: {value}
             </span>
