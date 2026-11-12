@@ -29,6 +29,32 @@ defmodule Observer.Web.Processes.PageLiveTest do
     assert html =~ "CURRENT FUNCTION"
   end
 
+  test "Search filters rows by name and shows the Showing badge", %{conn: conn} do
+    RpcStubber.defaults()
+    TelemetryStubber.defaults()
+
+    {:ok, index_live, _html} = live(conn, "/observer/processes")
+
+    :timer.sleep(50)
+    render(index_live)
+
+    index_live
+    |> element("#processes-update-form")
+    |> render_change(%{
+      service: to_string(Node.self()),
+      sort_by: "reductions",
+      limit: "250",
+      refresh_seconds: "0",
+      search: "code_server"
+    })
+
+    :timer.sleep(50)
+
+    html = render(index_live)
+    assert html =~ "code_server"
+    assert html =~ "Showing:"
+  end
+
   test "Changing sort and limit re-ranks the table", %{conn: conn} do
     RpcStubber.defaults()
     TelemetryStubber.defaults()
