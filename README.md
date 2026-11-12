@@ -22,6 +22,7 @@ A short tour of the interactions: instant client-side selection and dropdowns, t
 
 ### Function profiling with Count, Duration, Call Sequence and Flame Graph tools
 ![Profiling Dashboard](./guides/static/profiling_dash.png)
+![Profiling Count Example](./guides/static/profiling_count.png)
 
 ### Busiest processes ranked by reductions, memory or message queue (etop style)
 ![Processes Dashboard](./guides/static/processes_dash.png)
