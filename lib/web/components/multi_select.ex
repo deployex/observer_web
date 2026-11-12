@@ -75,7 +75,7 @@ defmodule Observer.Web.Components.MultiSelect do
           !@show_options && "hidden"
         ]}
       >
-        <div :for={item <- @unselected} class="py-1">
+        <div :for={item <- @unselected} :if={@show_options} class="py-1">
           <div class="px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
             {item.name}
           </div>

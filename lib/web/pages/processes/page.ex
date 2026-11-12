@@ -14,7 +14,7 @@ defmodule Observer.Web.Processes.Page do
   use Observer.Web, :live_component
 
   alias Observer.Web.Components.Core
-  alias Observer.Web.Components.Icons
+  alias Observer.Web.Components.DetailsPanel
   alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.Processes
@@ -24,9 +24,7 @@ defmodule Observer.Web.Processes.Page do
     ~H"""
     <div class={[
       "min-h-screen bg-base-100",
-      @details && @details_panel_collapsed && "pb-16",
-      @details && !@details_panel_collapsed && !@details_panel_expanded && "pb-[70vh]",
-      @details && !@details_panel_collapsed && @details_panel_expanded && "pb-[92vh]"
+      DetailsPanel.padding_class(!!@details, @details_panel_collapsed, @details_panel_expanded)
     ]}>
       <Toolbar.content>
         <.form
@@ -71,7 +69,7 @@ defmodule Observer.Web.Processes.Page do
         <button
           id="processes-refresh"
           phx-click="processes-refresh"
-          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+          class={Core.action_button_class()}
         >
           REFRESH
         </button>
@@ -90,15 +88,15 @@ defmodule Observer.Web.Processes.Page do
         </div>
 
         <div :if={@summary} class="flex flex-wrap gap-2 px-2 pb-2 text-xs">
-          <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
+          <span class={Core.badge_class()}>
             Processes: {@summary.process_count}
           </span>
-          <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
+          <span class={Core.badge_class()}>
             Run Queue: {@summary.run_queue}
           </span>
           <span
             :for={key <- [:total, :processes, :ets, :binary, :atom, :code]}
-            class="px-2 py-1 rounded-full bg-info/10 border border-info text-info"
+            class={Core.badge_class()}
           >
             {key}: {format_bytes(Map.get(@summary.memory, key, 0))}
           </span>
@@ -129,73 +127,21 @@ defmodule Observer.Web.Processes.Page do
           </Core.table_tracing>
         </div>
 
-        <div
+        <DetailsPanel.content
           :if={@details}
           id="processes-details-panel"
-          phx-mounted={
-            JS.transition(
-              {"transition-transform duration-300 ease-out", "translate-y-full", "translate-y-0"}
-            )
-          }
-          class={[
-            "fixed inset-x-0 bottom-0 z-30 flex flex-col bg-base-100 border-t border-base-300 shadow-2xl",
-            @details_panel_expanded && "max-h-[92vh]",
-            !@details_panel_expanded && "max-h-[70vh]"
-          ]}
+          expand_id="processes-details-panel-expand"
+          collapse_id="processes-details-panel-collapse"
+          close_id="processes-details-close"
+          collapsed={@details_panel_collapsed}
+          expanded={@details_panel_expanded}
+          expand_event="processes-details-panel-expand"
+          collapse_event="processes-details-panel-collapse"
+          close_event="processes-details-close"
         >
-          <div class="flex items-center justify-between px-4 py-2 border-b border-base-300 shrink-0">
-            <h2 class="text-sm font-semibold text-base-content">
-              Process {inspect(@details.pid)}
-            </h2>
-            <div class="flex items-center gap-x-3">
-              <button
-                :if={not @details_panel_collapsed}
-                id="processes-details-panel-expand"
-                type="button"
-                aria-label={
-                  if @details_panel_expanded, do: "Shrink details panel", else: "Expand details panel"
-                }
-                title={if @details_panel_expanded, do: "Shrink", else: "Expand"}
-                phx-click="processes-details-panel-expand"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <%= if @details_panel_expanded do %>
-                  <Icons.arrows_pointing_in class="w-5 h-5" />
-                <% else %>
-                  <Icons.arrows_pointing_out class="w-5 h-5" />
-                <% end %>
-              </button>
-              <button
-                id="processes-details-panel-collapse"
-                type="button"
-                aria-label={
-                  if @details_panel_collapsed,
-                    do: "Restore details panel",
-                    else: "Minimize details panel"
-                }
-                title={if @details_panel_collapsed, do: "Restore", else: "Minimize"}
-                phx-click="processes-details-panel-collapse"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <%= if @details_panel_collapsed do %>
-                  <Icons.chevron_up class="w-5 h-5" />
-                <% else %>
-                  <Icons.chevron_down class="w-5 h-5" />
-                <% end %>
-              </button>
-              <button
-                id="processes-details-close"
-                type="button"
-                aria-label="Close details panel"
-                title="Close"
-                phx-click="processes-details-close"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <Icons.x_mark class="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div :if={not @details_panel_collapsed} class="overflow-y-auto p-2">
+          <:title>Process {inspect(@details.pid)}</:title>
+
+          <div class="p-2">
             <div :if={@details.info == :not_found} class="p-4 text-sm text-muted">
               The process has exited.
             </div>
@@ -212,7 +158,7 @@ defmodule Observer.Web.Processes.Page do
               </tbody>
             </table>
           </div>
-        </div>
+        </DetailsPanel.content>
       </div>
     </div>
     """
@@ -284,13 +230,24 @@ defmodule Observer.Web.Processes.Page do
 
   def handle_parent_event("processes-select-row", %{"index" => index}, socket) do
     case Enum.at(socket.assigns.rows, positive_int(index, 0)) do
-      nil -> {:noreply, socket}
-      row -> {:noreply, assign(socket, :details, fetch_details(row.pid))}
+      nil ->
+        {:noreply, socket}
+
+      row ->
+        {:noreply,
+         socket
+         |> assign(:details, fetch_details(row.pid))
+         |> assign(:details_panel_collapsed, false)
+         |> assign(:details_panel_expanded, false)}
     end
   end
 
   def handle_parent_event("processes-details-close", _params, socket) do
-    {:noreply, assign(socket, :details, nil)}
+    {:noreply,
+     socket
+     |> assign(:details, nil)
+     |> assign(:details_panel_collapsed, false)
+     |> assign(:details_panel_expanded, false)}
   end
 
   def handle_parent_event("processes-details-panel-collapse", _params, socket) do

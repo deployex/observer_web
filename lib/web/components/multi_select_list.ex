@@ -101,6 +101,7 @@ defmodule Observer.Web.Components.MultiSelectList do
       >
         <div
           :for={item <- @unselected}
+          :if={@show_options}
           class="w-72 shrink-0 max-h-72 overflow-y-scroll rounded border border-base-300"
         >
           <div class="sticky top-0 z-10 bg-base-100 border-b border-base-200 p-1.5">

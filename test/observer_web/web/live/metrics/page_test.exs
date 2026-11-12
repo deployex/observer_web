@@ -74,7 +74,9 @@ defmodule Observer.Web.Metrics.PageLiveTest do
       [metric]
     end)
 
-    {:ok, liveview, _html} = live(conn, "/observer/metrics")
+    {:ok, liveview, html} = live(conn, "/observer/metrics")
+
+    refute html =~ "#{metric}"
 
     liveview
     |> element("#metrics-multi-select-toggle-options")

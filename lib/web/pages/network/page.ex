@@ -15,7 +15,7 @@ defmodule Observer.Web.Network.Page do
   use Observer.Web, :live_component
 
   alias Observer.Web.Components.Core
-  alias Observer.Web.Components.Icons
+  alias Observer.Web.Components.DetailsPanel
   alias Observer.Web.Components.Toolbar
   alias Observer.Web.Page
   alias ObserverWeb.Network
@@ -25,9 +25,7 @@ defmodule Observer.Web.Network.Page do
     ~H"""
     <div class={[
       "min-h-screen bg-base-100",
-      @details && @details_panel_collapsed && "pb-16",
-      @details && !@details_panel_collapsed && !@details_panel_expanded && "pb-[70vh]",
-      @details && !@details_panel_collapsed && @details_panel_expanded && "pb-[92vh]"
+      DetailsPanel.padding_class(!!@details, @details_panel_collapsed, @details_panel_expanded)
     ]}>
       <Toolbar.content>
         <.form
@@ -60,7 +58,7 @@ defmodule Observer.Web.Network.Page do
         <button
           id="network-refresh"
           phx-click="network-refresh"
-          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+          class={Core.action_button_class()}
         >
           REFRESH
         </button>
@@ -127,73 +125,21 @@ defmodule Observer.Web.Network.Page do
           </Core.table_tracing>
         </div>
 
-        <div
+        <DetailsPanel.content
           :if={@details}
           id="network-details-panel"
-          phx-mounted={
-            JS.transition(
-              {"transition-transform duration-300 ease-out", "translate-y-full", "translate-y-0"}
-            )
-          }
-          class={[
-            "fixed inset-x-0 bottom-0 z-30 flex flex-col bg-base-100 border-t border-base-300 shadow-2xl",
-            @details_panel_expanded && "max-h-[92vh]",
-            !@details_panel_expanded && "max-h-[70vh]"
-          ]}
+          expand_id="network-details-panel-expand"
+          collapse_id="network-details-panel-collapse"
+          close_id="network-details-close"
+          collapsed={@details_panel_collapsed}
+          expanded={@details_panel_expanded}
+          expand_event="network-details-panel-expand"
+          collapse_event="network-details-panel-collapse"
+          close_event="network-details-close"
         >
-          <div class="flex items-center justify-between px-4 py-2 border-b border-base-300 shrink-0">
-            <h2 class="text-sm font-semibold text-base-content">
-              Port {inspect(@details.port)} ({@details.local} → {@details.remote})
-            </h2>
-            <div class="flex items-center gap-x-3">
-              <button
-                :if={not @details_panel_collapsed}
-                id="network-details-panel-expand"
-                type="button"
-                aria-label={
-                  if @details_panel_expanded, do: "Shrink details panel", else: "Expand details panel"
-                }
-                title={if @details_panel_expanded, do: "Shrink", else: "Expand"}
-                phx-click="network-details-panel-expand"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <%= if @details_panel_expanded do %>
-                  <Icons.arrows_pointing_in class="w-5 h-5" />
-                <% else %>
-                  <Icons.arrows_pointing_out class="w-5 h-5" />
-                <% end %>
-              </button>
-              <button
-                id="network-details-panel-collapse"
-                type="button"
-                aria-label={
-                  if @details_panel_collapsed,
-                    do: "Restore details panel",
-                    else: "Minimize details panel"
-                }
-                title={if @details_panel_collapsed, do: "Restore", else: "Minimize"}
-                phx-click="network-details-panel-collapse"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <%= if @details_panel_collapsed do %>
-                  <Icons.chevron_up class="w-5 h-5" />
-                <% else %>
-                  <Icons.chevron_down class="w-5 h-5" />
-                <% end %>
-              </button>
-              <button
-                id="network-details-close"
-                type="button"
-                aria-label="Close details panel"
-                title="Close"
-                phx-click="network-details-close"
-                class="inline-flex text-muted focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary focus:text-base-content transition ease-in-out duration-150"
-              >
-                <Icons.x_mark class="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div :if={not @details_panel_collapsed} class="overflow-y-auto p-2">
+          <:title>Port {inspect(@details.port)} ({@details.local} → {@details.remote})</:title>
+
+          <div class="p-2">
             <table class="w-full text-left text-xs m-2">
               <tbody>
                 <tr :for={{key, value} <- details_rows(@details)} class="align-top">
@@ -207,7 +153,7 @@ defmodule Observer.Web.Network.Page do
               </tbody>
             </table>
           </div>
-        </div>
+        </DetailsPanel.content>
       </div>
     </div>
     """
@@ -279,13 +225,24 @@ defmodule Observer.Web.Network.Page do
 
   def handle_parent_event("network-select-row", %{"index" => index}, socket) do
     case Enum.at(socket.assigns.rows || [], positive_int(index, 0)) do
-      nil -> {:noreply, socket}
-      row -> {:noreply, assign(socket, :details, row)}
+      nil ->
+        {:noreply, socket}
+
+      row ->
+        {:noreply,
+         socket
+         |> assign(:details, row)
+         |> assign(:details_panel_collapsed, false)
+         |> assign(:details_panel_expanded, false)}
     end
   end
 
   def handle_parent_event("network-details-close", _params, socket) do
-    {:noreply, assign(socket, :details, nil)}
+    {:noreply,
+     socket
+     |> assign(:details, nil)
+     |> assign(:details_panel_collapsed, false)
+     |> assign(:details_panel_expanded, false)}
   end
 
   def handle_parent_event("network-details-panel-collapse", _params, socket) do

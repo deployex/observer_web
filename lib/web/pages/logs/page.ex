@@ -51,7 +51,7 @@ defmodule Observer.Web.Logs.Page do
         <button
           id="logs-refresh"
           phx-click="logs-refresh"
-          class="phx-submit-loading:opacity-75 rounded-xl bg-success transform active:scale-75 transition-transform hover:opacity-90 ml-auto px-5 py-1.5 shrink-0 flex items-center justify-center text-sm font-semibold text-success-content active:opacity-75"
+          class={Core.action_button_class()}
         >
           REFRESH
         </button>
@@ -72,16 +72,13 @@ defmodule Observer.Web.Logs.Page do
 
         <div :if={@tail} class="bg-base-100 w-full shadow-lg rounded">
           <div class="flex flex-wrap gap-2 px-4 py-2 text-xs">
-            <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
+            <span class={Core.badge_class()}>
               File size: {format_bytes(@tail.size)}
             </span>
-            <span class="px-2 py-1 rounded-full bg-info/10 border border-info text-info">
+            <span class={Core.badge_class()}>
               Entries: {length(@log_entries)}
             </span>
-            <span
-              :if={@tail.truncated?}
-              class="px-2 py-1 rounded-full bg-warning/10 border border-warning text-warning"
-            >
+            <span :if={@tail.truncated?} class={Core.badge_class(:warning)}>
               Showing the last {@form.params["max_bytes"] |> String.to_integer() |> format_bytes()}
             </span>
           </div>
