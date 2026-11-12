@@ -64,6 +64,8 @@ defmodule Observer.Web.Processes.Page do
             label="Refresh"
             options={[{"Paused", "0"}, {"2s", "2"}, {"5s", "5"}, {"10s", "10"}]}
           />
+
+          <Core.input field={@form[:search]} type="text" label="Search" phx-debounce="300" />
         </.form>
 
         <button
@@ -99,6 +101,9 @@ defmodule Observer.Web.Processes.Page do
             class={Core.badge_class()}
           >
             {key}: {format_bytes(Map.get(@summary.memory, key, 0))}
+          </span>
+          <span :if={search_active?(@form)} class={Core.badge_class(:neutral)}>
+            Showing: {length(@rows)}
           </span>
         </div>
 
@@ -314,8 +319,11 @@ defmodule Observer.Web.Processes.Page do
 
     sort_by = sort_by_atom(form.params["sort_by"])
     limit = positive_int(form.params["limit"], 50)
+    search = String.downcase(form.params["search"] || "")
 
-    rows = Processes.rank(sample, sort_by, limit, previous_reductions)
+    filtered_sample = %{sample | processes: filter_processes(sample.processes, search)}
+
+    rows = Processes.rank(filtered_sample, sort_by, limit, previous_reductions)
 
     details =
       if details do
@@ -353,6 +361,16 @@ defmodule Observer.Web.Processes.Page do
     |> Enum.find(Node.self(), &(to_string(&1) == service))
   end
 
+  defp filter_processes(processes, ""), do: processes
+
+  defp filter_processes(processes, search) do
+    Enum.filter(processes, fn row ->
+      String.contains?(String.downcase(row.name), search) or
+        String.contains?(String.downcase(inspect(row.pid)), search) or
+        String.contains?(String.downcase(row.current_function), search)
+    end)
+  end
+
   defp sort_by_atom("memory"), do: :memory
   defp sort_by_atom("message_queue_len"), do: :message_queue_len
   defp sort_by_atom(_reductions), do: :reductions
@@ -369,9 +387,12 @@ defmodule Observer.Web.Processes.Page do
       "service" => to_string(Node.self()),
       "sort_by" => "reductions",
       "limit" => "50",
-      "refresh_seconds" => "5"
+      "refresh_seconds" => "5",
+      "search" => ""
     }
   end
+
+  defp search_active?(form), do: (form.params["search"] || "") != ""
 
   defp reductions_label("reductions"), do: "REDUCTIONS (Δ)"
   defp reductions_label(_other), do: "REDUCTIONS"

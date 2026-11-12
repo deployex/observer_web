@@ -12,6 +12,11 @@ library is part of the [DeployEx][dye] project.
 
 ## Check out some of the available features
 
+### Quick look
+![Quick Look](./guides/static/quick_look.gif)
+
+A short tour of the interactions: instant client-side selection and dropdowns, the animated bottom details panel, and live countdown timers on Tracing/Profiling sessions.
+
 ### Distributed tracing safe to use in production
 ![Tracing Dashboard](./guides/static/tracing_dash.png)
 
