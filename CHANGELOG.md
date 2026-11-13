@@ -1,5 +1,21 @@
 # CHANGELOG (v0.2.X)
 
+## 0.2.10 🚀 (2026-11-13)
+
+### ⚠️ Backwards incompatible changes for 0.2.9
+ * None
+
+### Bug fixes
+ * [[`PR-77`](https://github.com/deployex/observer_web/pull/77)] Enforce access control on destructive dashboard actions and remove an arbitrary code execution path (`Code.eval_string/1`) from the "send message" feature
+ * [[`PR-88`](https://github.com/deployex/observer_web/pull/88)] Fix the confirm modal rendering behind its own backdrop
+ * [[`PR-89`](https://github.com/deployex/observer_web/pull/89)] Stop the Applications tree chart from zooming while scrolling the page
+ * [[`PR-90`](https://github.com/deployex/observer_web/pull/90)] Bump mox to fix a flaky global-mode test cleanup race
+
+### Enhancements
+ * [[`PR-91`](https://github.com/deployex/observer_web/pull/91)] Make the live metrics charts follow the app's dark/light theme
+ * [[`PR-99`](https://github.com/deployex/observer_web/pull/99)] Refresh the dashboard's visual design with shared color tokens, bottom-docked details/settings panels, instant client-side selection, and countdown timers for Tracing/Profiling sessions
+ * [[`PR-100`](https://github.com/deployex/observer_web/pull/100)] Add search filtering to the Processes and Network pages, a two-column System page layout, and refreshed documentation screenshots
+
 ## 0.2.9 🚀 (2026-10-30)
 
 ### ⚠️ Backwards incompatible changes for 0.2.8
