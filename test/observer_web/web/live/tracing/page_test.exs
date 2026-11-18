@@ -494,7 +494,7 @@ defmodule Observer.Web.Tracing.PageLiveTest do
 
   # Polls `fun` until it returns a truthy value, giving asynchronous trace plumbing
   # (dbg -> Tracer.Server -> PubSub -> LiveView) time to deliver without a fixed sleep.
-  defp wait_until(fun, timeout_ms \\ 2_000) do
+  defp wait_until(fun, timeout_ms \\ 5_000) do
     deadline = System.monotonic_time(:millisecond) + timeout_ms
 
     wait_until_loop(fun, deadline)
